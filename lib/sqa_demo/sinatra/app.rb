@@ -219,7 +219,28 @@ module SqaDemo
           sma_50 = SQAI.sma(prices, period: 50)
           ema_20 = SQAI.ema(prices, period: 20)
 
-          # Calculate volume indicators on full dataset
+          # Additional moving averages for price overlay
+          wma_20 = SQAI.wma(prices, period: 20)
+          dema_20 = SQAI.dema(prices, period: 20)
+          tema_20 = SQAI.tema(prices, period: 20)
+          kama_30 = SQAI.kama(prices, period: 30)
+
+          # Momentum indicators (require high/low/close)
+          stoch_result = SQAI.stoch(highs, lows, prices)
+          mom_10 = SQAI.mom(prices, period: 10)
+          cci_14 = SQAI.cci(highs, lows, prices, period: 14)
+          willr_14 = SQAI.willr(highs, lows, prices, period: 14)
+          roc_10 = SQAI.roc(prices, period: 10)
+          adx_14 = SQAI.adx(highs, lows, prices, period: 14)
+
+          # Volatility indicators
+          atr_14 = SQAI.atr(highs, lows, prices, period: 14)
+
+          # Volume indicators
+          obv = SQAI.obv(prices, volumes)
+          ad = SQAI.ad(highs, lows, prices, volumes)
+
+          # Calculate volume moving averages
           vol_sma_12 = SQAI.sma(volumes, period: 12)
           vol_sma_20 = SQAI.sma(volumes, period: 20)
           vol_sma_50 = SQAI.sma(volumes, period: 50)
@@ -242,7 +263,27 @@ module SqaDemo
           sma_50 = pad_array.call(sma_50)
           ema_20 = pad_array.call(ema_20)
 
+          # Pad additional moving averages
+          wma_20 = pad_array.call(wma_20)
+          dema_20 = pad_array.call(dema_20)
+          tema_20 = pad_array.call(tema_20)
+          kama_30 = pad_array.call(kama_30)
+
+          # Pad momentum indicators
+          stoch_slowk = pad_array.call(stoch_result[0])
+          stoch_slowd = pad_array.call(stoch_result[1])
+          mom_10 = pad_array.call(mom_10)
+          cci_14 = pad_array.call(cci_14)
+          willr_14 = pad_array.call(willr_14)
+          roc_10 = pad_array.call(roc_10)
+          adx_14 = pad_array.call(adx_14)
+
+          # Pad volatility indicators
+          atr_14 = pad_array.call(atr_14)
+
           # Pad volume indicators
+          obv = pad_array.call(obv)
+          ad = pad_array.call(ad)
           vol_sma_12 = pad_array.call(vol_sma_12)
           vol_sma_20 = pad_array.call(vol_sma_20)
           vol_sma_50 = pad_array.call(vol_sma_50)
@@ -253,11 +294,19 @@ module SqaDemo
           filtered_dates, filtered_rsi, filtered_macd, filtered_macd_signal, filtered_macd_hist,
             filtered_bb_upper, filtered_bb_middle, filtered_bb_lower,
             filtered_sma_12, filtered_sma_20, filtered_sma_50, filtered_ema_20,
+            filtered_wma_20, filtered_dema_20, filtered_tema_20, filtered_kama_30,
+            filtered_stoch_slowk, filtered_stoch_slowd, filtered_mom_10,
+            filtered_cci_14, filtered_willr_14, filtered_roc_10, filtered_adx_14,
+            filtered_atr_14, filtered_obv, filtered_ad,
             filtered_vol_sma_12, filtered_vol_sma_20, filtered_vol_sma_50,
             filtered_vol_ema_12, filtered_vol_ema_20 =
             filter_by_period(dates, rsi, macd_line, macd_signal, macd_hist,
                              bb_upper, bb_middle, bb_lower,
                              sma_12, sma_20, sma_50, ema_20,
+                             wma_20, dema_20, tema_20, kama_30,
+                             stoch_slowk, stoch_slowd, mom_10,
+                             cci_14, willr_14, roc_10, adx_14,
+                             atr_14, obv, ad,
                              vol_sma_12, vol_sma_20, vol_sma_50,
                              vol_ema_12, vol_ema_20, period: period)
 
@@ -275,6 +324,20 @@ module SqaDemo
             sma_20: filtered_sma_20,
             sma_50: filtered_sma_50,
             ema_20: filtered_ema_20,
+            wma_20: filtered_wma_20,
+            dema_20: filtered_dema_20,
+            tema_20: filtered_tema_20,
+            kama_30: filtered_kama_30,
+            stoch_slowk: filtered_stoch_slowk,
+            stoch_slowd: filtered_stoch_slowd,
+            mom_10: filtered_mom_10,
+            cci_14: filtered_cci_14,
+            willr_14: filtered_willr_14,
+            roc_10: filtered_roc_10,
+            adx_14: filtered_adx_14,
+            atr_14: filtered_atr_14,
+            obv: filtered_obv,
+            ad: filtered_ad,
             vol_sma_12: filtered_vol_sma_12,
             vol_sma_20: filtered_vol_sma_20,
             vol_sma_50: filtered_vol_sma_50,

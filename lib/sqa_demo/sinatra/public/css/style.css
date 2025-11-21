@@ -626,6 +626,35 @@ body {
   cursor: pointer;
 }
 
+.dropdown-menu-scrollable {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.dropdown-section {
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.25rem;
+}
+
+.dropdown-section:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.dropdown-section-title {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  padding: 0.5rem 1rem 0.25rem;
+  background: var(--card-bg);
+}
+
+.dropdown-section .dropdown-item:first-child {
+  border-radius: 0;
+}
+
 .chart {
   width: 100%;
   height: 500px;

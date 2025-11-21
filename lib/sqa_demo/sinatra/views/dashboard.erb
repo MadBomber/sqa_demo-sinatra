@@ -74,28 +74,52 @@
             <button type="button" class="btn-small dropdown-toggle" onclick="toggleIndicatorDropdown()">
               <span id="selectedIndicatorCount">None</span> <i class="fas fa-chevron-down"></i>
             </button>
-            <div id="indicatorDropdownMenu" class="dropdown-menu">
-              <label class="dropdown-item">
-                <input type="checkbox" value="sma_12" onchange="updateSelectedIndicators()"> SMA 12
-              </label>
-              <label class="dropdown-item">
-                <input type="checkbox" value="sma_20" onchange="updateSelectedIndicators()"> SMA 20
-              </label>
-              <label class="dropdown-item">
-                <input type="checkbox" value="sma_50" onchange="updateSelectedIndicators()"> SMA 50
-              </label>
-              <label class="dropdown-item">
-                <input type="checkbox" value="ema_20" onchange="updateSelectedIndicators()"> EMA 20
-              </label>
-              <label class="dropdown-item">
-                <input type="checkbox" value="bb_upper" onchange="updateSelectedIndicators()"> BB Upper
-              </label>
-              <label class="dropdown-item">
-                <input type="checkbox" value="bb_middle" onchange="updateSelectedIndicators()"> BB Middle
-              </label>
-              <label class="dropdown-item">
-                <input type="checkbox" value="bb_lower" onchange="updateSelectedIndicators()"> BB Lower
-              </label>
+            <div id="indicatorDropdownMenu" class="dropdown-menu dropdown-menu-scrollable">
+              <div class="dropdown-section">
+                <div class="dropdown-section-title">Simple MA</div>
+                <label class="dropdown-item">
+                  <input type="checkbox" value="sma_12" onchange="updateSelectedIndicators()"> SMA 12
+                </label>
+                <label class="dropdown-item">
+                  <input type="checkbox" value="sma_20" onchange="updateSelectedIndicators()"> SMA 20
+                </label>
+                <label class="dropdown-item">
+                  <input type="checkbox" value="sma_50" onchange="updateSelectedIndicators()"> SMA 50
+                </label>
+              </div>
+              <div class="dropdown-section">
+                <div class="dropdown-section-title">Exponential MA</div>
+                <label class="dropdown-item">
+                  <input type="checkbox" value="ema_20" onchange="updateSelectedIndicators()"> EMA 20
+                </label>
+                <label class="dropdown-item">
+                  <input type="checkbox" value="dema_20" onchange="updateSelectedIndicators()"> DEMA 20
+                </label>
+                <label class="dropdown-item">
+                  <input type="checkbox" value="tema_20" onchange="updateSelectedIndicators()"> TEMA 20
+                </label>
+              </div>
+              <div class="dropdown-section">
+                <div class="dropdown-section-title">Other MA</div>
+                <label class="dropdown-item">
+                  <input type="checkbox" value="wma_20" onchange="updateSelectedIndicators()"> WMA 20
+                </label>
+                <label class="dropdown-item">
+                  <input type="checkbox" value="kama_30" onchange="updateSelectedIndicators()"> KAMA 30
+                </label>
+              </div>
+              <div class="dropdown-section">
+                <div class="dropdown-section-title">Bollinger Bands</div>
+                <label class="dropdown-item">
+                  <input type="checkbox" value="bb_upper" onchange="updateSelectedIndicators()"> BB Upper
+                </label>
+                <label class="dropdown-item">
+                  <input type="checkbox" value="bb_middle" onchange="updateSelectedIndicators()"> BB Middle
+                </label>
+                <label class="dropdown-item">
+                  <input type="checkbox" value="bb_lower" onchange="updateSelectedIndicators()"> BB Lower
+                </label>
+              </div>
             </div>
           </div>
         </div>
@@ -119,22 +143,34 @@
             <button type="button" class="btn-small dropdown-toggle" onclick="toggleVolumeIndicatorDropdown()">
               <span id="selectedVolumeIndicatorCount">None</span> <i class="fas fa-chevron-down"></i>
             </button>
-            <div id="volumeIndicatorDropdownMenu" class="dropdown-menu">
-              <label class="dropdown-item">
-                <input type="checkbox" value="vol_sma_12" onchange="updateSelectedVolumeIndicators()"> SMA 12
-              </label>
-              <label class="dropdown-item">
-                <input type="checkbox" value="vol_sma_20" onchange="updateSelectedVolumeIndicators()"> SMA 20
-              </label>
-              <label class="dropdown-item">
-                <input type="checkbox" value="vol_sma_50" onchange="updateSelectedVolumeIndicators()"> SMA 50
-              </label>
-              <label class="dropdown-item">
-                <input type="checkbox" value="vol_ema_12" onchange="updateSelectedVolumeIndicators()"> EMA 12
-              </label>
-              <label class="dropdown-item">
-                <input type="checkbox" value="vol_ema_20" onchange="updateSelectedVolumeIndicators()"> EMA 20
-              </label>
+            <div id="volumeIndicatorDropdownMenu" class="dropdown-menu dropdown-menu-scrollable">
+              <div class="dropdown-section">
+                <div class="dropdown-section-title">Moving Averages</div>
+                <label class="dropdown-item">
+                  <input type="checkbox" value="vol_sma_12" onchange="updateSelectedVolumeIndicators()"> SMA 12
+                </label>
+                <label class="dropdown-item">
+                  <input type="checkbox" value="vol_sma_20" onchange="updateSelectedVolumeIndicators()"> SMA 20
+                </label>
+                <label class="dropdown-item">
+                  <input type="checkbox" value="vol_sma_50" onchange="updateSelectedVolumeIndicators()"> SMA 50
+                </label>
+                <label class="dropdown-item">
+                  <input type="checkbox" value="vol_ema_12" onchange="updateSelectedVolumeIndicators()"> EMA 12
+                </label>
+                <label class="dropdown-item">
+                  <input type="checkbox" value="vol_ema_20" onchange="updateSelectedVolumeIndicators()"> EMA 20
+                </label>
+              </div>
+              <div class="dropdown-section">
+                <div class="dropdown-section-title">Volume Analysis</div>
+                <label class="dropdown-item">
+                  <input type="checkbox" value="obv" onchange="updateSelectedVolumeIndicators()"> OBV
+                </label>
+                <label class="dropdown-item">
+                  <input type="checkbox" value="ad" onchange="updateSelectedVolumeIndicators()"> A/D Line
+                </label>
+              </div>
             </div>
           </div>
         </div>
@@ -189,24 +225,34 @@ let volumeChart = null;
 let rsiChart = null;
 let macdChart = null;
 
-// Indicator configuration
+// Indicator configuration - Price Overlays
 const INDICATOR_CONFIG = {
+  // Simple Moving Averages
   sma_12: { name: 'SMA 12', color: '#4ecdc4' },
   sma_20: { name: 'SMA 20', color: '#ffaa00' },
   sma_50: { name: 'SMA 50', color: '#ff66ff' },
+  // Exponential Moving Average
   ema_20: { name: 'EMA 20', color: '#00ff88' },
+  // Additional Moving Averages
+  wma_20: { name: 'WMA 20', color: '#ff9f43' },
+  dema_20: { name: 'DEMA 20', color: '#a55eea' },
+  tema_20: { name: 'TEMA 20', color: '#26de81' },
+  kama_30: { name: 'KAMA 30', color: '#fd9644' },
+  // Bollinger Bands
   bb_upper: { name: 'BB Upper', color: '#ff6b6b' },
   bb_middle: { name: 'BB Middle', color: '#ffd93d' },
   bb_lower: { name: 'BB Lower', color: '#6bcb77' }
 };
 
-// Volume indicator configuration (same indicators but for volume data)
+// Volume indicator configuration (moving averages for volume data)
 const VOLUME_INDICATOR_CONFIG = {
   vol_sma_12: { name: 'SMA 12', color: '#4ecdc4', period: 12, type: 'sma' },
   vol_sma_20: { name: 'SMA 20', color: '#ffaa00', period: 20, type: 'sma' },
   vol_sma_50: { name: 'SMA 50', color: '#ff66ff', period: 50, type: 'sma' },
   vol_ema_12: { name: 'EMA 12', color: '#00d4ff', period: 12, type: 'ema' },
-  vol_ema_20: { name: 'EMA 20', color: '#00ff88', period: 20, type: 'ema' }
+  vol_ema_20: { name: 'EMA 20', color: '#00ff88', period: 20, type: 'ema' },
+  obv: { name: 'OBV', color: '#a55eea', type: 'line' },
+  ad: { name: 'A/D Line', color: '#26de81', type: 'line' }
 };
 
 let selectedIndicators = [];  // User-selected indicators for line chart
