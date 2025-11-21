@@ -16,6 +16,12 @@ module SqaDemo
       # Enable sessions for flash messages
       enable :sessions
 
+      configure :development do
+        require 'sinatra/reloader'
+        register ::Sinatra::Reloader
+        also_reload File.join(root, '**', '*.rb')
+      end
+
       configure do
         SQA.init
       end
