@@ -213,6 +213,7 @@ module SqaDemo
           rsi = SQAI.rsi(prices, period: 14)
           macd_result = SQAI.macd(prices)
           bb_result = SQAI.bbands(prices)
+          sma_12 = SQAI.sma(prices, period: 12)
           sma_20 = SQAI.sma(prices, period: 20)
           sma_50 = SQAI.sma(prices, period: 50)
           ema_20 = SQAI.ema(prices, period: 20)
@@ -228,16 +229,17 @@ module SqaDemo
           bb_upper = pad_array.call(bb_result[0])
           bb_middle = pad_array.call(bb_result[1])
           bb_lower = pad_array.call(bb_result[2])
+          sma_12 = pad_array.call(sma_12)
           sma_20 = pad_array.call(sma_20)
           sma_50 = pad_array.call(sma_50)
           ema_20 = pad_array.call(ema_20)
 
           # Filter results by period (keep indicators aligned with dates)
           filtered_dates, filtered_rsi, filtered_macd, filtered_macd_signal, filtered_macd_hist,
-            filtered_bb_upper, filtered_bb_middle, filtered_bb_lower, filtered_sma_20, filtered_sma_50, filtered_ema_20 =
+            filtered_bb_upper, filtered_bb_middle, filtered_bb_lower, filtered_sma_12, filtered_sma_20, filtered_sma_50, filtered_ema_20 =
             filter_by_period(dates, rsi, macd_line, macd_signal, macd_hist,
                              bb_upper, bb_middle, bb_lower,
-                             sma_20, sma_50, ema_20, period: period)
+                             sma_12, sma_20, sma_50, ema_20, period: period)
 
           {
             period: period,
@@ -249,6 +251,7 @@ module SqaDemo
             bb_upper: filtered_bb_upper,
             bb_middle: filtered_bb_middle,
             bb_lower: filtered_bb_lower,
+            sma_12: filtered_sma_12,
             sma_20: filtered_sma_20,
             sma_50: filtered_sma_50,
             ema_20: filtered_ema_20

@@ -68,6 +68,37 @@
         <button onclick="updateChartType('line')" class="btn-small" data-chart="line">
           Line
         </button>
+        <div id="indicatorSelector" class="indicator-selector" style="display: none;">
+          <label>Indicators:</label>
+          <div class="indicator-dropdown">
+            <button type="button" class="btn-small dropdown-toggle" onclick="toggleIndicatorDropdown()">
+              <span id="selectedIndicatorCount">None</span> <i class="fas fa-chevron-down"></i>
+            </button>
+            <div id="indicatorDropdownMenu" class="dropdown-menu">
+              <label class="dropdown-item">
+                <input type="checkbox" value="sma_12" onchange="updateSelectedIndicators()"> SMA 12
+              </label>
+              <label class="dropdown-item">
+                <input type="checkbox" value="sma_20" onchange="updateSelectedIndicators()"> SMA 20
+              </label>
+              <label class="dropdown-item">
+                <input type="checkbox" value="sma_50" onchange="updateSelectedIndicators()"> SMA 50
+              </label>
+              <label class="dropdown-item">
+                <input type="checkbox" value="ema_20" onchange="updateSelectedIndicators()"> EMA 20
+              </label>
+              <label class="dropdown-item">
+                <input type="checkbox" value="bb_upper" onchange="updateSelectedIndicators()"> BB Upper
+              </label>
+              <label class="dropdown-item">
+                <input type="checkbox" value="bb_middle" onchange="updateSelectedIndicators()"> BB Middle
+              </label>
+              <label class="dropdown-item">
+                <input type="checkbox" value="bb_lower" onchange="updateSelectedIndicators()"> BB Lower
+              </label>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
     <div id="priceChart" class="chart"></div>
@@ -126,6 +157,19 @@ let priceChart = null;
 let volumeChart = null;
 let rsiChart = null;
 let macdChart = null;
+
+// Indicator configuration
+const INDICATOR_CONFIG = {
+  sma_12: { name: 'SMA 12', color: '#4ecdc4' },
+  sma_20: { name: 'SMA 20', color: '#ffaa00' },
+  sma_50: { name: 'SMA 50', color: '#ff66ff' },
+  ema_20: { name: 'EMA 20', color: '#00ff88' },
+  bb_upper: { name: 'BB Upper', color: '#ff6b6b' },
+  bb_middle: { name: 'BB Middle', color: '#ffd93d' },
+  bb_lower: { name: 'BB Lower', color: '#6bcb77' }
+};
+
+let selectedIndicators = [];  // User-selected indicators for line chart
 
 // Load data when page loads
 document.addEventListener('DOMContentLoaded', async function() {
@@ -323,23 +367,27 @@ function renderPriceChart() {
       }
     };
   } else {
-    // Line chart with moving averages using category axis (eliminates weekend gaps)
+    // Line chart with user-selected indicators using category axis (eliminates weekend gaps)
     const series = [{
       name: ticker,
       data: stockData.close  // Just values, aligned to categories
     }];
 
-    // Add moving averages if available (keep nulls for alignment with category axis)
-    if (indicatorData && indicatorData.sma_20) {
-      series.push({
-        name: 'SMA 20',
-        data: indicatorData.sma_20  // Nulls are ok - ApexCharts handles them
-      });
-    }
-    if (indicatorData && indicatorData.sma_50) {
-      series.push({
-        name: 'SMA 50',
-        data: indicatorData.sma_50  // Nulls are ok - ApexCharts handles them
+    // Build colors and stroke widths arrays starting with price line
+    const colors = ['#00d4ff'];
+    const strokeWidths = [3];
+
+    // Add selected indicators if available
+    if (indicatorData) {
+      selectedIndicators.forEach(indicatorKey => {
+        if (indicatorData[indicatorKey] && INDICATOR_CONFIG[indicatorKey]) {
+          series.push({
+            name: INDICATOR_CONFIG[indicatorKey].name,
+            data: indicatorData[indicatorKey]  // Nulls are ok - ApexCharts handles them
+          });
+          colors.push(INDICATOR_CONFIG[indicatorKey].color);
+          strokeWidths.push(2);
+        }
       });
     }
 
@@ -367,9 +415,9 @@ function renderPriceChart() {
           type: 'x'
         }
       },
-      colors: ['#00d4ff', '#ffaa00', '#ff66ff'],
+      colors: colors,
       stroke: {
-        width: [3, 2, 2],
+        width: strokeWidths,
         curve: 'smooth'
       },
       xaxis: {
@@ -824,9 +872,52 @@ function updateChartType(type) {
   });
   document.querySelector(`[data-chart="${type}"]`).classList.add('active');
 
+  // Show/hide indicator selector based on chart type
+  const indicatorSelector = document.getElementById('indicatorSelector');
+  indicatorSelector.style.display = type === 'line' ? 'flex' : 'none';
+
   // Re-render chart
   renderPriceChart();
 }
+
+function toggleIndicatorDropdown() {
+  const menu = document.getElementById('indicatorDropdownMenu');
+  menu.classList.toggle('show');
+}
+
+function updateSelectedIndicators() {
+  const checkboxes = document.querySelectorAll('#indicatorDropdownMenu input[type="checkbox"]');
+  selectedIndicators = [];
+
+  checkboxes.forEach(cb => {
+    if (cb.checked) {
+      selectedIndicators.push(cb.value);
+    }
+  });
+
+  // Update the count display
+  const countEl = document.getElementById('selectedIndicatorCount');
+  if (selectedIndicators.length === 0) {
+    countEl.textContent = 'None';
+  } else if (selectedIndicators.length === 1) {
+    countEl.textContent = INDICATOR_CONFIG[selectedIndicators[0]].name;
+  } else {
+    countEl.textContent = `${selectedIndicators.length} selected`;
+  }
+
+  // Re-render the chart if in line mode
+  if (currentChartType === 'line') {
+    renderPriceChart();
+  }
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(event) {
+  const dropdown = document.querySelector('.indicator-dropdown');
+  if (dropdown && !dropdown.contains(event.target)) {
+    document.getElementById('indicatorDropdownMenu').classList.remove('show');
+  }
+});
 
 async function runStrategyComparison() {
   const resultsDiv = document.getElementById('strategyResults');
