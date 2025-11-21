@@ -201,6 +201,7 @@ module SqaDemo
           highs = df["high_price"].to_a
           lows = df["low_price"].to_a
           dates = df["timestamp"].to_a.map(&:to_s)
+          n = prices.length
 
           # Calculate indicators on full dataset (they need historical context)
           rsi = SQAI.rsi(prices, period: 14)
@@ -210,11 +211,26 @@ module SqaDemo
           sma_50 = SQAI.sma(prices, period: 50)
           ema_20 = SQAI.ema(prices, period: 20)
 
+          # Pad indicator arrays with nil at the beginning to align with dates
+          # Indicators return shorter arrays due to warmup periods
+          pad_array = ->(arr) { Array.new(n - arr.length, nil) + arr }
+
+          rsi = pad_array.call(rsi)
+          macd_line = pad_array.call(macd_result[0])
+          macd_signal = pad_array.call(macd_result[1])
+          macd_hist = pad_array.call(macd_result[2])
+          bb_upper = pad_array.call(bb_result[0])
+          bb_middle = pad_array.call(bb_result[1])
+          bb_lower = pad_array.call(bb_result[2])
+          sma_20 = pad_array.call(sma_20)
+          sma_50 = pad_array.call(sma_50)
+          ema_20 = pad_array.call(ema_20)
+
           # Filter results by period (keep indicators aligned with dates)
           filtered_dates, filtered_rsi, filtered_macd, filtered_macd_signal, filtered_macd_hist,
             filtered_bb_upper, filtered_bb_middle, filtered_bb_lower, filtered_sma_20, filtered_sma_50, filtered_ema_20 =
-            filter_by_period(dates, rsi, macd_result[0], macd_result[1], macd_result[2],
-                             bb_result[0], bb_result[1], bb_result[2],
+            filter_by_period(dates, rsi, macd_line, macd_signal, macd_hist,
+                             bb_upper, bb_middle, bb_lower,
                              sma_20, sma_50, ema_20, period: period)
 
           {

@@ -200,6 +200,11 @@ async function loadIndicators() {
     // Render indicator charts
     renderRSIChart();
     renderMACDChart();
+
+    // Re-render price chart if in line mode (to include updated indicator data)
+    if (currentChartType === 'line') {
+      renderPriceChart();
+    }
   } catch (error) {
     console.error('Error loading indicators:', error);
     document.getElementById('currentRSI').textContent = 'Error';
@@ -324,15 +329,34 @@ function renderPriceChart() {
       data: stockData.dates.map((date, i) => [new Date(date).getTime(), stockData.close[i]])
     }];
 
-    // Add moving averages if available
+    // Add moving averages if available (filter out null/invalid values from warmup period)
     if (indicatorData) {
+      // Filter SMA 20 to only include valid values
+      const sma20Data = [];
+      for (let i = 0; i < indicatorData.dates.length; i++) {
+        if (indicatorData.sma_20[i] !== null &&
+            indicatorData.sma_20[i] !== undefined &&
+            !isNaN(indicatorData.sma_20[i])) {
+          sma20Data.push([new Date(indicatorData.dates[i]).getTime(), indicatorData.sma_20[i]]);
+        }
+      }
       series.push({
         name: 'SMA 20',
-        data: indicatorData.dates.map((date, i) => [new Date(date).getTime(), indicatorData.sma_20[i]])
+        data: sma20Data
       });
+
+      // Filter SMA 50 to only include valid values
+      const sma50Data = [];
+      for (let i = 0; i < indicatorData.dates.length; i++) {
+        if (indicatorData.sma_50[i] !== null &&
+            indicatorData.sma_50[i] !== undefined &&
+            !isNaN(indicatorData.sma_50[i])) {
+          sma50Data.push([new Date(indicatorData.dates[i]).getTime(), indicatorData.sma_50[i]]);
+        }
+      }
       series.push({
         name: 'SMA 50',
-        data: indicatorData.dates.map((date, i) => [new Date(date).getTime(), indicatorData.sma_50[i]])
+        data: sma50Data
       });
     }
 
