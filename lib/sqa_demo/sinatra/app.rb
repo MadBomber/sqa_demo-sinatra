@@ -206,10 +206,11 @@ module SqaDemo
           prices = df["adj_close_price"].to_a
           highs = df["high_price"].to_a
           lows = df["low_price"].to_a
+          volumes = df["volume"].to_a
           dates = df["timestamp"].to_a.map(&:to_s)
           n = prices.length
 
-          # Calculate indicators on full dataset (they need historical context)
+          # Calculate price indicators on full dataset (they need historical context)
           rsi = SQAI.rsi(prices, period: 14)
           macd_result = SQAI.macd(prices)
           bb_result = SQAI.bbands(prices)
@@ -217,6 +218,13 @@ module SqaDemo
           sma_20 = SQAI.sma(prices, period: 20)
           sma_50 = SQAI.sma(prices, period: 50)
           ema_20 = SQAI.ema(prices, period: 20)
+
+          # Calculate volume indicators on full dataset
+          vol_sma_12 = SQAI.sma(volumes, period: 12)
+          vol_sma_20 = SQAI.sma(volumes, period: 20)
+          vol_sma_50 = SQAI.sma(volumes, period: 50)
+          vol_ema_12 = SQAI.ema(volumes, period: 12)
+          vol_ema_20 = SQAI.ema(volumes, period: 20)
 
           # Pad indicator arrays with nil at the beginning to align with dates
           # Indicators return shorter arrays due to warmup periods
@@ -234,12 +242,24 @@ module SqaDemo
           sma_50 = pad_array.call(sma_50)
           ema_20 = pad_array.call(ema_20)
 
+          # Pad volume indicators
+          vol_sma_12 = pad_array.call(vol_sma_12)
+          vol_sma_20 = pad_array.call(vol_sma_20)
+          vol_sma_50 = pad_array.call(vol_sma_50)
+          vol_ema_12 = pad_array.call(vol_ema_12)
+          vol_ema_20 = pad_array.call(vol_ema_20)
+
           # Filter results by period (keep indicators aligned with dates)
           filtered_dates, filtered_rsi, filtered_macd, filtered_macd_signal, filtered_macd_hist,
-            filtered_bb_upper, filtered_bb_middle, filtered_bb_lower, filtered_sma_12, filtered_sma_20, filtered_sma_50, filtered_ema_20 =
+            filtered_bb_upper, filtered_bb_middle, filtered_bb_lower,
+            filtered_sma_12, filtered_sma_20, filtered_sma_50, filtered_ema_20,
+            filtered_vol_sma_12, filtered_vol_sma_20, filtered_vol_sma_50,
+            filtered_vol_ema_12, filtered_vol_ema_20 =
             filter_by_period(dates, rsi, macd_line, macd_signal, macd_hist,
                              bb_upper, bb_middle, bb_lower,
-                             sma_12, sma_20, sma_50, ema_20, period: period)
+                             sma_12, sma_20, sma_50, ema_20,
+                             vol_sma_12, vol_sma_20, vol_sma_50,
+                             vol_ema_12, vol_ema_20, period: period)
 
           {
             period: period,
@@ -254,7 +274,12 @@ module SqaDemo
             sma_12: filtered_sma_12,
             sma_20: filtered_sma_20,
             sma_50: filtered_sma_50,
-            ema_20: filtered_ema_20
+            ema_20: filtered_ema_20,
+            vol_sma_12: filtered_vol_sma_12,
+            vol_sma_20: filtered_vol_sma_20,
+            vol_sma_50: filtered_vol_sma_50,
+            vol_ema_12: filtered_vol_ema_12,
+            vol_ema_20: filtered_vol_ema_20
           }.to_json
         rescue => e
           status 500

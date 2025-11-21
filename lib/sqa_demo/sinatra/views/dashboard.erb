@@ -108,6 +108,37 @@
   <div class="chart-container">
     <div class="chart-header">
       <h2><i class="fas fa-chart-bar"></i> Volume</h2>
+      <div class="chart-controls">
+        <div class="chart-legend">
+          <span class="legend-item"><span class="legend-color" style="background-color: #00ff88;"></span> Price Up</span>
+          <span class="legend-item"><span class="legend-color" style="background-color: #ff3366;"></span> Price Down</span>
+        </div>
+        <div class="indicator-selector">
+          <label>Indicators:</label>
+          <div class="indicator-dropdown">
+            <button type="button" class="btn-small dropdown-toggle" onclick="toggleVolumeIndicatorDropdown()">
+              <span id="selectedVolumeIndicatorCount">None</span> <i class="fas fa-chevron-down"></i>
+            </button>
+            <div id="volumeIndicatorDropdownMenu" class="dropdown-menu">
+              <label class="dropdown-item">
+                <input type="checkbox" value="vol_sma_12" onchange="updateSelectedVolumeIndicators()"> SMA 12
+              </label>
+              <label class="dropdown-item">
+                <input type="checkbox" value="vol_sma_20" onchange="updateSelectedVolumeIndicators()"> SMA 20
+              </label>
+              <label class="dropdown-item">
+                <input type="checkbox" value="vol_sma_50" onchange="updateSelectedVolumeIndicators()"> SMA 50
+              </label>
+              <label class="dropdown-item">
+                <input type="checkbox" value="vol_ema_12" onchange="updateSelectedVolumeIndicators()"> EMA 12
+              </label>
+              <label class="dropdown-item">
+                <input type="checkbox" value="vol_ema_20" onchange="updateSelectedVolumeIndicators()"> EMA 20
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
     <div id="volumeChart" class="chart"></div>
   </div>
@@ -169,7 +200,58 @@ const INDICATOR_CONFIG = {
   bb_lower: { name: 'BB Lower', color: '#6bcb77' }
 };
 
+// Volume indicator configuration (same indicators but for volume data)
+const VOLUME_INDICATOR_CONFIG = {
+  vol_sma_12: { name: 'SMA 12', color: '#4ecdc4', period: 12, type: 'sma' },
+  vol_sma_20: { name: 'SMA 20', color: '#ffaa00', period: 20, type: 'sma' },
+  vol_sma_50: { name: 'SMA 50', color: '#ff66ff', period: 50, type: 'sma' },
+  vol_ema_12: { name: 'EMA 12', color: '#00d4ff', period: 12, type: 'ema' },
+  vol_ema_20: { name: 'EMA 20', color: '#00ff88', period: 20, type: 'ema' }
+};
+
 let selectedIndicators = [];  // User-selected indicators for line chart
+let selectedVolumeIndicators = [];  // User-selected indicators for volume chart
+
+// Calculate SMA for an array of values
+function calculateSMA(data, period) {
+  const result = [];
+  for (let i = 0; i < data.length; i++) {
+    if (i < period - 1) {
+      result.push(null);
+    } else {
+      let sum = 0;
+      for (let j = 0; j < period; j++) {
+        sum += data[i - j];
+      }
+      result.push(sum / period);
+    }
+  }
+  return result;
+}
+
+// Calculate EMA for an array of values
+function calculateEMA(data, period) {
+  const result = [];
+  const multiplier = 2 / (period + 1);
+
+  for (let i = 0; i < data.length; i++) {
+    if (i < period - 1) {
+      result.push(null);
+    } else if (i === period - 1) {
+      // First EMA is SMA
+      let sum = 0;
+      for (let j = 0; j < period; j++) {
+        sum += data[i - j];
+      }
+      result.push(sum / period);
+    } else {
+      // EMA = (Close - Previous EMA) * multiplier + Previous EMA
+      const ema = (data[i] - result[i - 1]) * multiplier + result[i - 1];
+      result.push(ema);
+    }
+  }
+  return result;
+}
 
 // Load data when page loads
 document.addEventListener('DOMContentLoaded', async function() {
@@ -248,6 +330,11 @@ async function loadIndicators() {
     // Re-render price chart if in line mode (to include updated indicator data)
     if (currentChartType === 'line') {
       renderPriceChart();
+    }
+
+    // Re-render volume chart if volume indicators are selected
+    if (selectedVolumeIndicators.length > 0) {
+      renderVolumeChart();
     }
   } catch (error) {
     console.error('Error loading indicators:', error);
@@ -486,20 +573,49 @@ function renderVolumeChart() {
     volumeChart.destroy();
   }
 
-  // Prepare volume data with colors for category axis
-  const volumeData = stockData.volume.map((vol, i) => ({
-    x: stockData.dates[i],
-    y: vol,
-    fillColor: i === 0 ? '#00d4ff' : (stockData.close[i] >= stockData.close[i - 1] ? '#00ff88' : '#ff3366')
-  }));
+  // Calculate bar colors based on price movement
+  const barColors = stockData.volume.map((vol, i) =>
+    i === 0 ? '#00d4ff' : (stockData.close[i] >= stockData.close[i - 1] ? '#00ff88' : '#ff3366')
+  );
+
+  // Build series array - volume bars first (plain array for mixed chart compatibility)
+  // Use 'column' type for vertical bars in mixed charts
+  const series = [{
+    name: 'Volume',
+    type: 'column',
+    data: stockData.volume
+  }];
+
+  // Build stroke widths array
+  const strokeWidths = [0];  // No stroke for bars
+
+  // Build colors array for series (first is for bars, rest are for line indicators)
+  // Note: Per-bar coloring is handled separately via fill options
+  const seriesColors = ['#00d4ff'];  // Default bar color
+
+  // Add selected volume indicators as line series (using backend-calculated data)
+  if (indicatorData) {
+    selectedVolumeIndicators.forEach(indicatorKey => {
+      const config = VOLUME_INDICATOR_CONFIG[indicatorKey];
+      // Map frontend key to backend data key (vol_sma_12 -> indicatorData.vol_sma_12)
+      const backendData = indicatorData[indicatorKey];
+
+      if (config && backendData) {
+        series.push({
+          name: config.name,
+          type: 'line',
+          data: backendData
+        });
+        strokeWidths.push(2);
+        seriesColors.push(config.color);
+      }
+    });
+  }
 
   const options = {
-    series: [{
-      name: 'Volume',
-      data: volumeData
-    }],
+    series: series,
     chart: {
-      type: 'bar',
+      type: 'line',  // Base type for mixed charts
       height: 300,
       group: 'stock-charts',
       background: '#151b3d',
@@ -520,16 +636,29 @@ function renderVolumeChart() {
         type: 'x'
       }
     },
+    colors: seriesColors,
+    stroke: {
+      width: strokeWidths,
+      curve: 'smooth'
+    },
     dataLabels: {
       enabled: false  // Disable data labels for performance
     },
     plotOptions: {
       bar: {
         columnWidth: '95%',
-        colors: {
-          ranges: []
-        }
+        distributed: false
       }
+    },
+    fill: {
+      colors: [function({ value, seriesIndex, dataPointIndex, w }) {
+        if (seriesIndex === 0) {
+          // Bar series - use price movement colors
+          return barColors[dataPointIndex] || '#00d4ff';
+        }
+        // Line series - use their configured color
+        return seriesColors[seriesIndex] || '#00d4ff';
+      }]
     },
     xaxis: {
       type: 'category',
@@ -565,13 +694,24 @@ function renderVolumeChart() {
       borderColor: '#2a3154',
       strokeDashArray: 3
     },
+    legend: {
+      show: selectedVolumeIndicators.length > 0,
+      position: 'top',
+      horizontalAlign: 'left',
+      fontSize: '14px',
+      labels: {
+        colors: '#e8eaf6'
+      }
+    },
     theme: {
       mode: 'dark'
     },
     tooltip: {
       theme: 'dark',
+      shared: true,
+      intersect: false,
       y: {
-        formatter: (val) => val.toLocaleString()
+        formatter: (val) => val ? val.toLocaleString() : ''
       },
       x: {
         formatter: (val, opts) => stockData.dates[opts.dataPointIndex] || val
@@ -911,11 +1051,45 @@ function updateSelectedIndicators() {
   }
 }
 
-// Close dropdown when clicking outside
+function toggleVolumeIndicatorDropdown() {
+  const menu = document.getElementById('volumeIndicatorDropdownMenu');
+  menu.classList.toggle('show');
+}
+
+function updateSelectedVolumeIndicators() {
+  const checkboxes = document.querySelectorAll('#volumeIndicatorDropdownMenu input[type="checkbox"]');
+  selectedVolumeIndicators = [];
+
+  checkboxes.forEach(cb => {
+    if (cb.checked) {
+      selectedVolumeIndicators.push(cb.value);
+    }
+  });
+
+  // Update the count display
+  const countEl = document.getElementById('selectedVolumeIndicatorCount');
+  if (selectedVolumeIndicators.length === 0) {
+    countEl.textContent = 'None';
+  } else if (selectedVolumeIndicators.length === 1) {
+    countEl.textContent = VOLUME_INDICATOR_CONFIG[selectedVolumeIndicators[0]].name;
+  } else {
+    countEl.textContent = `${selectedVolumeIndicators.length} selected`;
+  }
+
+  // Re-render the volume chart
+  renderVolumeChart();
+}
+
+// Close dropdowns when clicking outside
 document.addEventListener('click', function(event) {
-  const dropdown = document.querySelector('.indicator-dropdown');
-  if (dropdown && !dropdown.contains(event.target)) {
+  const priceDropdown = document.querySelector('#indicatorSelector .indicator-dropdown');
+  if (priceDropdown && !priceDropdown.contains(event.target)) {
     document.getElementById('indicatorDropdownMenu').classList.remove('show');
+  }
+
+  const volumeDropdown = document.querySelector('#volumeIndicatorDropdownMenu')?.closest('.indicator-dropdown');
+  if (volumeDropdown && !volumeDropdown.contains(event.target)) {
+    document.getElementById('volumeIndicatorDropdownMenu').classList.remove('show');
   }
 });
 
