@@ -196,6 +196,30 @@
       </div>
       <div id="macdChart" class="chart chart-small"></div>
     </div>
+
+    <!-- Stochastic Oscillator Chart -->
+    <div class="chart-container">
+      <div class="chart-header">
+        <h3><i class="fas fa-chart-line"></i> Stochastic (5,3,3)</h3>
+      </div>
+      <div id="stochChart" class="chart chart-small"></div>
+    </div>
+
+    <!-- CCI Chart -->
+    <div class="chart-container">
+      <div class="chart-header">
+        <h3><i class="fas fa-compress-arrows-alt"></i> CCI (14)</h3>
+      </div>
+      <div id="cciChart" class="chart chart-small"></div>
+    </div>
+
+    <!-- ADX Chart -->
+    <div class="chart-container">
+      <div class="chart-header">
+        <h3><i class="fas fa-arrows-alt-h"></i> ADX (14)</h3>
+      </div>
+      <div id="adxChart" class="chart chart-small"></div>
+    </div>
   </div>
 
   <!-- Strategy Comparison -->
@@ -224,6 +248,9 @@ let priceChart = null;
 let volumeChart = null;
 let rsiChart = null;
 let macdChart = null;
+let stochChart = null;
+let cciChart = null;
+let adxChart = null;
 
 // Indicator configuration - Price Overlays
 const INDICATOR_CONFIG = {
@@ -372,6 +399,9 @@ async function loadIndicators() {
     // Render indicator charts
     renderRSIChart();
     renderMACDChart();
+    renderStochChart();
+    renderCCIChart();
+    renderADXChart();
 
     // Re-render price chart if in line mode (to include updated indicator data)
     if (currentChartType === 'line') {
@@ -1047,6 +1077,218 @@ function renderMACDChart() {
 
   macdChart = new ApexCharts(document.querySelector("#macdChart"), options);
   macdChart.render();
+}
+
+function renderStochChart() {
+  if (stochChart) {
+    stochChart.destroy();
+  }
+
+  if (!indicatorData || !indicatorData.stoch_slowk || !indicatorData.stoch_slowd) {
+    document.querySelector("#stochChart").innerHTML = '<p style="text-align: center; padding: 40px; color: #9fa8da;">Stochastic data not available</p>';
+    return;
+  }
+
+  // Filter valid data points
+  const validDates = [];
+  const validSlowK = [];
+  const validSlowD = [];
+  for (let i = 0; i < indicatorData.stoch_slowk.length; i++) {
+    if (indicatorData.dates[i] !== null &&
+        indicatorData.stoch_slowk[i] !== null &&
+        indicatorData.stoch_slowd[i] !== null &&
+        !isNaN(indicatorData.stoch_slowk[i]) &&
+        !isNaN(indicatorData.stoch_slowd[i])) {
+      validDates.push(indicatorData.dates[i]);
+      validSlowK.push(indicatorData.stoch_slowk[i]);
+      validSlowD.push(indicatorData.stoch_slowd[i]);
+    }
+  }
+
+  if (validDates.length === 0) {
+    document.querySelector("#stochChart").innerHTML = '<p style="text-align: center; padding: 40px; color: #9fa8da;">No valid Stochastic data available</p>';
+    return;
+  }
+
+  // Create reference lines
+  const oversoldLine = validDates.map(() => 20);
+  const overboughtLine = validDates.map(() => 80);
+
+  const options = {
+    series: [
+      { name: '%K', data: validSlowK },
+      { name: '%D', data: validSlowD },
+      { name: 'Oversold (20)', data: oversoldLine },
+      { name: 'Overbought (80)', data: overboughtLine }
+    ],
+    chart: {
+      type: 'line',
+      height: 350,
+      group: 'stock-charts',
+      background: '#151b3d',
+      foreColor: '#e8eaf6',
+      toolbar: { show: true, tools: { download: true, zoom: true, zoomin: true, zoomout: true, pan: true, reset: true } },
+      zoom: { enabled: true, type: 'x' }
+    },
+    colors: ['#00d4ff', '#ffaa00', '#00ff88', '#ff3366'],
+    stroke: { width: [3, 3, 2, 2], curve: 'smooth', dashArray: [0, 0, 5, 5] },
+    xaxis: {
+      type: 'category',
+      categories: validDates,
+      tickAmount: 10,
+      labels: {
+        rotate: -45,
+        style: { colors: '#9fa8da' },
+        formatter: (val) => val ? `${val.split('-')[1]}/${val.split('-')[2]}` : ''
+      }
+    },
+    yaxis: { min: 0, max: 100, labels: { style: { colors: '#9fa8da' } } },
+    grid: { borderColor: '#2a3154', strokeDashArray: 3 },
+    legend: { position: 'top', horizontalAlign: 'left', fontSize: '14px', labels: { colors: '#e8eaf6' } },
+    theme: { mode: 'dark' },
+    tooltip: { theme: 'dark', shared: true, intersect: false, x: { formatter: (val, opts) => validDates[opts.dataPointIndex] || val } }
+  };
+
+  stochChart = new ApexCharts(document.querySelector("#stochChart"), options);
+  stochChart.render();
+}
+
+function renderCCIChart() {
+  if (cciChart) {
+    cciChart.destroy();
+  }
+
+  if (!indicatorData || !indicatorData.cci_14) {
+    document.querySelector("#cciChart").innerHTML = '<p style="text-align: center; padding: 40px; color: #9fa8da;">CCI data not available</p>';
+    return;
+  }
+
+  // Filter valid data points
+  const validDates = [];
+  const validCCI = [];
+  for (let i = 0; i < indicatorData.cci_14.length; i++) {
+    if (indicatorData.dates[i] !== null &&
+        indicatorData.cci_14[i] !== null &&
+        !isNaN(indicatorData.cci_14[i])) {
+      validDates.push(indicatorData.dates[i]);
+      validCCI.push(indicatorData.cci_14[i]);
+    }
+  }
+
+  if (validDates.length === 0) {
+    document.querySelector("#cciChart").innerHTML = '<p style="text-align: center; padding: 40px; color: #9fa8da;">No valid CCI data available</p>';
+    return;
+  }
+
+  // Create reference lines
+  const upperLine = validDates.map(() => 100);
+  const lowerLine = validDates.map(() => -100);
+  const zeroLine = validDates.map(() => 0);
+
+  const options = {
+    series: [
+      { name: 'CCI', data: validCCI },
+      { name: 'Overbought (+100)', data: upperLine },
+      { name: 'Zero', data: zeroLine },
+      { name: 'Oversold (-100)', data: lowerLine }
+    ],
+    chart: {
+      type: 'line',
+      height: 350,
+      group: 'stock-charts',
+      background: '#151b3d',
+      foreColor: '#e8eaf6',
+      toolbar: { show: true, tools: { download: true, zoom: true, zoomin: true, zoomout: true, pan: true, reset: true } },
+      zoom: { enabled: true, type: 'x' }
+    },
+    colors: ['#a55eea', '#ff3366', '#9fa8da', '#00ff88'],
+    stroke: { width: [3, 2, 1, 2], curve: 'smooth', dashArray: [0, 5, 5, 5] },
+    xaxis: {
+      type: 'category',
+      categories: validDates,
+      tickAmount: 10,
+      labels: {
+        rotate: -45,
+        style: { colors: '#9fa8da' },
+        formatter: (val) => val ? `${val.split('-')[1]}/${val.split('-')[2]}` : ''
+      }
+    },
+    yaxis: { labels: { style: { colors: '#9fa8da' }, formatter: (val) => val ? val.toFixed(0) : '' } },
+    grid: { borderColor: '#2a3154', strokeDashArray: 3 },
+    legend: { position: 'top', horizontalAlign: 'left', fontSize: '14px', labels: { colors: '#e8eaf6' } },
+    theme: { mode: 'dark' },
+    tooltip: { theme: 'dark', shared: true, intersect: false, x: { formatter: (val, opts) => validDates[opts.dataPointIndex] || val } }
+  };
+
+  cciChart = new ApexCharts(document.querySelector("#cciChart"), options);
+  cciChart.render();
+}
+
+function renderADXChart() {
+  if (adxChart) {
+    adxChart.destroy();
+  }
+
+  if (!indicatorData || !indicatorData.adx_14) {
+    document.querySelector("#adxChart").innerHTML = '<p style="text-align: center; padding: 40px; color: #9fa8da;">ADX data not available</p>';
+    return;
+  }
+
+  // Filter valid data points
+  const validDates = [];
+  const validADX = [];
+  for (let i = 0; i < indicatorData.adx_14.length; i++) {
+    if (indicatorData.dates[i] !== null &&
+        indicatorData.adx_14[i] !== null &&
+        !isNaN(indicatorData.adx_14[i])) {
+      validDates.push(indicatorData.dates[i]);
+      validADX.push(indicatorData.adx_14[i]);
+    }
+  }
+
+  if (validDates.length === 0) {
+    document.querySelector("#adxChart").innerHTML = '<p style="text-align: center; padding: 40px; color: #9fa8da;">No valid ADX data available</p>';
+    return;
+  }
+
+  // Create threshold line (25 = strong trend)
+  const thresholdLine = validDates.map(() => 25);
+
+  const options = {
+    series: [
+      { name: 'ADX', data: validADX },
+      { name: 'Strong Trend (25)', data: thresholdLine }
+    ],
+    chart: {
+      type: 'line',
+      height: 350,
+      group: 'stock-charts',
+      background: '#151b3d',
+      foreColor: '#e8eaf6',
+      toolbar: { show: true, tools: { download: true, zoom: true, zoomin: true, zoomout: true, pan: true, reset: true } },
+      zoom: { enabled: true, type: 'x' }
+    },
+    colors: ['#fd9644', '#9fa8da'],
+    stroke: { width: [3, 2], curve: 'smooth', dashArray: [0, 5] },
+    xaxis: {
+      type: 'category',
+      categories: validDates,
+      tickAmount: 10,
+      labels: {
+        rotate: -45,
+        style: { colors: '#9fa8da' },
+        formatter: (val) => val ? `${val.split('-')[1]}/${val.split('-')[2]}` : ''
+      }
+    },
+    yaxis: { min: 0, max: 100, labels: { style: { colors: '#9fa8da' } } },
+    grid: { borderColor: '#2a3154', strokeDashArray: 3 },
+    legend: { position: 'top', horizontalAlign: 'left', fontSize: '14px', labels: { colors: '#e8eaf6' } },
+    theme: { mode: 'dark' },
+    tooltip: { theme: 'dark', shared: true, intersect: false, x: { formatter: (val, opts) => validDates[opts.dataPointIndex] || val } }
+  };
+
+  adxChart = new ApexCharts(document.querySelector("#adxChart"), options);
+  adxChart.render();
 }
 
 function updateChartType(type) {
