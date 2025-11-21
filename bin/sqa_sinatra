@@ -1,0 +1,72 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'optparse'
+require 'rackup'
+
+options = {
+  port: 9292,
+  host: '0.0.0.0'
+}
+
+OptionParser.new do |opts|
+  opts.banner = "Usage: sqa_sinatra [options]"
+
+  opts.on("-p", "--port PORT", Integer, "Port to listen on (default: 9292)") do |p|
+    options[:port] = p
+  end
+
+  opts.on("-o", "--host HOST", "Host to bind to (default: 0.0.0.0)") do |h|
+    options[:host] = h
+  end
+
+  opts.on("-e", "--environment ENV", "Rack environment (default: development)") do |e|
+    ENV['RACK_ENV'] = e
+  end
+
+  opts.on("-h", "--help", "Show this help message") do
+    puts opts
+    exit
+  end
+
+  opts.on("-v", "--version", "Show version") do
+    require_relative '../lib/sqa_demo/sinatra/version'
+    puts "sqa_sinatra #{SqaDemo::Sinatra::VERSION}"
+    exit
+  end
+end.parse!
+
+# Find the config.ru file
+config_ru = File.expand_path('../../config.ru', __FILE__)
+
+unless File.exist?(config_ru)
+  # When installed as a gem, use the gem's config.ru
+  require 'sqa_demo/sinatra'
+
+  # Create a temporary config.ru
+  require 'tempfile'
+  config_file = Tempfile.new(['config', '.ru'])
+  config_file.write(<<~RACKUP)
+    # frozen_string_literal: true
+    require 'sqa_demo/sinatra'
+    run SqaDemo::Sinatra::App
+  RACKUP
+  config_file.close
+  config_ru = config_file.path
+end
+
+puts "============================================================"
+puts "SQA Sinatra App"
+puts "============================================================"
+puts ""
+puts "Starting server on http://#{options[:host]}:#{options[:port]}"
+puts "Press Ctrl+C to stop"
+puts "============================================================"
+puts ""
+
+# Start the Rack server
+Rackup::Server.start(
+  config: config_ru,
+  Port: options[:port],
+  Host: options[:host]
+)
