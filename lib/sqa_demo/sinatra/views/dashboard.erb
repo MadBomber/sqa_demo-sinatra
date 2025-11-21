@@ -323,40 +323,23 @@ function renderPriceChart() {
       }
     };
   } else {
-    // Line chart with moving averages
+    // Line chart with moving averages using category axis (eliminates weekend gaps)
     const series = [{
       name: ticker,
-      data: stockData.dates.map((date, i) => [new Date(date).getTime(), stockData.close[i]])
+      data: stockData.close  // Just values, aligned to categories
     }];
 
-    // Add moving averages if available (filter out null/invalid values from warmup period)
-    if (indicatorData) {
-      // Filter SMA 20 to only include valid values
-      const sma20Data = [];
-      for (let i = 0; i < indicatorData.dates.length; i++) {
-        if (indicatorData.sma_20[i] !== null &&
-            indicatorData.sma_20[i] !== undefined &&
-            !isNaN(indicatorData.sma_20[i])) {
-          sma20Data.push([new Date(indicatorData.dates[i]).getTime(), indicatorData.sma_20[i]]);
-        }
-      }
+    // Add moving averages if available (keep nulls for alignment with category axis)
+    if (indicatorData && indicatorData.sma_20) {
       series.push({
         name: 'SMA 20',
-        data: sma20Data
+        data: indicatorData.sma_20  // Nulls are ok - ApexCharts handles them
       });
-
-      // Filter SMA 50 to only include valid values
-      const sma50Data = [];
-      for (let i = 0; i < indicatorData.dates.length; i++) {
-        if (indicatorData.sma_50[i] !== null &&
-            indicatorData.sma_50[i] !== undefined &&
-            !isNaN(indicatorData.sma_50[i])) {
-          sma50Data.push([new Date(indicatorData.dates[i]).getTime(), indicatorData.sma_50[i]]);
-        }
-      }
+    }
+    if (indicatorData && indicatorData.sma_50) {
       series.push({
         name: 'SMA 50',
-        data: sma50Data
+        data: indicatorData.sma_50  // Nulls are ok - ApexCharts handles them
       });
     }
 
@@ -390,10 +373,20 @@ function renderPriceChart() {
         curve: 'smooth'
       },
       xaxis: {
-        type: 'datetime',
+        type: 'category',
+        categories: stockData.dates,
+        tickAmount: 10,  // Limit x-axis labels for readability
         labels: {
+          rotate: -45,
+          rotateAlways: false,
           style: {
             colors: '#9fa8da'
+          },
+          formatter: (val) => {
+            // Format date for display (show month and day)
+            if (!val) return '';
+            const parts = val.split('-');
+            return parts.length >= 3 ? `${parts[1]}/${parts[2]}` : val;
           }
         }
       },
@@ -402,7 +395,7 @@ function renderPriceChart() {
           style: {
             colors: '#9fa8da'
           },
-          formatter: (val) => '$' + val.toFixed(2)
+          formatter: (val) => val ? '$' + val.toFixed(2) : ''
         }
       },
       grid: {
@@ -423,7 +416,14 @@ function renderPriceChart() {
       tooltip: {
         theme: 'dark',
         shared: true,
-        intersect: false
+        intersect: false,
+        x: {
+          formatter: (val, opts) => {
+            // Show full date in tooltip
+            const date = stockData.dates[opts.dataPointIndex];
+            return date || val;
+          }
+        }
       }
     };
   }
@@ -438,10 +438,10 @@ function renderVolumeChart() {
     volumeChart.destroy();
   }
 
-  // Prepare volume data with timestamps and colors
-  const volumeData = stockData.dates.map((date, i) => ({
-    x: new Date(date).getTime(),
-    y: stockData.volume[i],
+  // Prepare volume data with colors for category axis
+  const volumeData = stockData.volume.map((vol, i) => ({
+    x: stockData.dates[i],
+    y: vol,
     fillColor: i === 0 ? '#00d4ff' : (stockData.close[i] >= stockData.close[i - 1] ? '#00ff88' : '#ff3366')
   }));
 
@@ -484,10 +484,19 @@ function renderVolumeChart() {
       }
     },
     xaxis: {
-      type: 'datetime',
+      type: 'category',
+      categories: stockData.dates,
+      tickAmount: 10,
       labels: {
+        rotate: -45,
+        rotateAlways: false,
         style: {
           colors: '#9fa8da'
+        },
+        formatter: (val) => {
+          if (!val) return '';
+          const parts = val.split('-');
+          return parts.length >= 3 ? `${parts[1]}/${parts[2]}` : val;
         }
       }
     },
@@ -515,6 +524,9 @@ function renderVolumeChart() {
       theme: 'dark',
       y: {
         formatter: (val) => val.toLocaleString()
+      },
+      x: {
+        formatter: (val, opts) => stockData.dates[opts.dataPointIndex] || val
       }
     }
   };
@@ -535,38 +547,35 @@ function renderRSIChart() {
     return;
   }
 
-  // Filter out null/NaN/undefined values (RSI has warmup period)
-  const validRSIIndices = [];
+  // Filter out null/NaN/undefined values and build category-aligned data
+  const validDates = [];
+  const validRSI = [];
   for (let i = 0; i < indicatorData.rsi.length; i++) {
     if (indicatorData.dates[i] !== null &&
         indicatorData.dates[i] !== undefined &&
         indicatorData.rsi[i] !== null &&
         indicatorData.rsi[i] !== undefined &&
         !isNaN(indicatorData.rsi[i])) {
-      validRSIIndices.push(i);
+      validDates.push(indicatorData.dates[i]);
+      validRSI.push(indicatorData.rsi[i]);
     }
   }
 
   // If no valid data, show message
-  if (validRSIIndices.length === 0) {
+  if (validDates.length === 0) {
     document.querySelector("#rsiChart").innerHTML = '<p style="text-align: center; padding: 40px; color: #9fa8da;">No valid RSI data available (warmup period or data issue)</p>';
     return;
   }
 
+  // Create constant arrays for reference lines
+  const oversoldLine = validDates.map(() => 30);
+  const overboughtLine = validDates.map(() => 70);
+
   const options = {
     series: [
-      {
-        name: 'RSI',
-        data: validRSIIndices.map(i => [new Date(indicatorData.dates[i]).getTime(), indicatorData.rsi[i]])
-      },
-      {
-        name: 'Oversold (30)',
-        data: validRSIIndices.map(i => [new Date(indicatorData.dates[i]).getTime(), 30])
-      },
-      {
-        name: 'Overbought (70)',
-        data: validRSIIndices.map(i => [new Date(indicatorData.dates[i]).getTime(), 70])
-      }
+      { name: 'RSI', data: validRSI },
+      { name: 'Oversold (30)', data: oversoldLine },
+      { name: 'Overbought (70)', data: overboughtLine }
     ],
     chart: {
       type: 'line',
@@ -597,10 +606,19 @@ function renderRSIChart() {
       dashArray: [0, 5, 5]
     },
     xaxis: {
-      type: 'datetime',
+      type: 'category',
+      categories: validDates,
+      tickAmount: 10,
       labels: {
+        rotate: -45,
+        rotateAlways: false,
         style: {
           colors: '#9fa8da'
+        },
+        formatter: (val) => {
+          if (!val) return '';
+          const parts = val.split('-');
+          return parts.length >= 3 ? `${parts[1]}/${parts[2]}` : val;
         }
       }
     },
@@ -631,7 +649,10 @@ function renderRSIChart() {
     tooltip: {
       theme: 'dark',
       shared: true,
-      intersect: false
+      intersect: false,
+      x: {
+        formatter: (val, opts) => validDates[opts.dataPointIndex] || val
+      }
     },
     annotations: {
       yaxis: [
@@ -667,8 +688,11 @@ function renderMACDChart() {
     return;
   }
 
-  // Filter out null/NaN/undefined values (MACD has warmup period)
-  const validIndices = [];
+  // Filter out null/NaN/undefined values and build category-aligned data
+  const validDates = [];
+  const validMACD = [];
+  const validSignal = [];
+  const validHist = [];
   for (let i = 0; i < indicatorData.macd.length; i++) {
     if (indicatorData.dates[i] !== null &&
         indicatorData.dates[i] !== undefined &&
@@ -681,40 +705,30 @@ function renderMACDChart() {
         !isNaN(indicatorData.macd[i]) &&
         !isNaN(indicatorData.macd_signal[i]) &&
         !isNaN(indicatorData.macd_hist[i])) {
-      validIndices.push(i);
+      validDates.push(indicatorData.dates[i]);
+      validMACD.push(indicatorData.macd[i]);
+      validSignal.push(indicatorData.macd_signal[i]);
+      validHist.push(indicatorData.macd_hist[i]);
     }
   }
 
   // If no valid data, show message
-  if (validIndices.length === 0) {
+  if (validDates.length === 0) {
     document.querySelector("#macdChart").innerHTML = '<p style="text-align: center; padding: 40px; color: #9fa8da;">No valid MACD data available (warmup period or data issue)</p>';
     return;
   }
 
-  // Prepare histogram data with colors (only valid values)
-  const histData = validIndices.map(i => ({
-    x: new Date(indicatorData.dates[i]).getTime(),
-    y: indicatorData.macd_hist[i],
-    fillColor: indicatorData.macd_hist[i] >= 0 ? '#00ff88' : '#ff3366'
+  // Prepare histogram data with colors for category axis
+  const histData = validHist.map(h => ({
+    y: h,
+    fillColor: h >= 0 ? '#00ff88' : '#ff3366'
   }));
 
   const options = {
     series: [
-      {
-        name: 'Histogram',
-        type: 'bar',
-        data: histData
-      },
-      {
-        name: 'MACD',
-        type: 'line',
-        data: validIndices.map(i => [new Date(indicatorData.dates[i]).getTime(), indicatorData.macd[i]])
-      },
-      {
-        name: 'Signal',
-        type: 'line',
-        data: validIndices.map(i => [new Date(indicatorData.dates[i]).getTime(), indicatorData.macd_signal[i]])
-      }
+      { name: 'Histogram', type: 'bar', data: histData },
+      { name: 'MACD', type: 'line', data: validMACD },
+      { name: 'Signal', type: 'line', data: validSignal }
     ],
     chart: {
       height: 350,
@@ -748,10 +762,19 @@ function renderMACDChart() {
       curve: 'smooth'
     },
     xaxis: {
-      type: 'datetime',
+      type: 'category',
+      categories: validDates,
+      tickAmount: 10,
       labels: {
+        rotate: -45,
+        rotateAlways: false,
         style: {
           colors: '#9fa8da'
+        },
+        formatter: (val) => {
+          if (!val) return '';
+          const parts = val.split('-');
+          return parts.length >= 3 ? `${parts[1]}/${parts[2]}` : val;
         }
       }
     },
@@ -760,7 +783,7 @@ function renderMACDChart() {
         style: {
           colors: '#9fa8da'
         },
-        formatter: (val) => val.toFixed(2)
+        formatter: (val) => val ? val.toFixed(2) : ''
       }
     },
     grid: {
@@ -781,7 +804,10 @@ function renderMACDChart() {
     tooltip: {
       theme: 'dark',
       shared: true,
-      intersect: false
+      intersect: false,
+      x: {
+        formatter: (val, opts) => validDates[opts.dataPointIndex] || val
+      }
     }
   };
 
