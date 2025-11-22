@@ -220,9 +220,9 @@ module SqaDemo
               # Fallback to ticker lookup
               if overview.empty?
                 ticker_info = SQA::Ticker.lookup(t)
-                company_name = ticker_info[:name] if ticker_info
+                company_name = ticker_info[:name]&.strip if ticker_info
               else
-                company_name = overview[:name]
+                company_name = overview[:name]&.strip
               end
 
               # Calculate basic metrics
