@@ -98,6 +98,33 @@
         </tr>
       </thead>
       <tbody>
+        <%
+          # Calculate best count for each ticker
+          best_counts = {}
+          @tickers.each { |t| best_counts[t] = 0 if @stocks_data[t] }
+
+          indicators.each do |section|
+            section[:items].each do |item|
+              best_ticker, _ = find_extremes(@stocks_data, item[:key], item[:higher_is_better])
+              best_counts[best_ticker] += 1 if best_ticker
+            end
+          end
+
+          # Find the ticker with the most "best" results
+          max_best_count = best_counts.values.max || 0
+        %>
+        <tr class="best-count-row">
+          <td class="metric-label best-count-label">Best Count</td>
+          <% @tickers.each do |ticker| %>
+            <% if @stocks_data[ticker] %>
+              <%
+                count = best_counts[ticker] || 0
+                is_leader = count == max_best_count && count > 0
+              %>
+          <td class="metric-value best-count-value <%= 'best-value' if is_leader %>"><%= count %></td>
+            <% end %>
+          <% end %>
+        </tr>
         <% indicators.each do |section| %>
         <tr class="section-row">
           <td colspan="<%= @stocks_data.length + 1 %>" class="section-header">
@@ -284,6 +311,23 @@
   overflow: hidden;
   text-overflow: ellipsis;
   text-align: right;
+}
+
+.best-count-row {
+  background: linear-gradient(135deg, #1a2248, #232b52);
+  border-bottom: 2px solid #00d4ff;
+}
+
+.best-count-row .best-count-label {
+  font-weight: bold;
+  color: #00d4ff;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+}
+
+.best-count-row .best-count-value {
+  font-size: 1.3rem;
+  font-weight: bold;
 }
 
 .section-row td {
