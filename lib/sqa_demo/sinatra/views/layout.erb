@@ -62,6 +62,17 @@
               <a href="/backtest/TSLA">TSLA</a>
             </div>
           </li>
+          <li class="nav-dropdown">
+            <a href="#" class="nav-link nav-dropdown-toggle"><i class="fas fa-balance-scale"></i> Compare <i class="fas fa-caret-down"></i></a>
+            <div class="nav-dropdown-menu">
+              <a href="#" onclick="showCompareModal(); return false;">Enter Tickers...</a>
+              <div class="nav-dropdown-divider"></div>
+              <span class="nav-dropdown-label">Popular Comparisons</span>
+              <a href="/compare?tickers=AAPL+MSFT+GOOGL">AAPL vs MSFT vs GOOGL</a>
+              <a href="/compare?tickers=TSLA+F+GM">TSLA vs F vs GM</a>
+              <a href="/compare?tickers=AMZN+WMT+TGT">AMZN vs WMT vs TGT</a>
+            </div>
+          </li>
           <li><a href="/portfolio" class="nav-link"><i class="fas fa-briefcase"></i> Portfolio</a></li>
         </ul>
         <button class="nav-search-btn" onclick="showTickerModal()" title="Search Stock">
@@ -127,11 +138,12 @@
   <div id="tickerModal" class="modal">
     <div class="modal-content">
       <span class="close" onclick="closeTickerModal()">&times;</span>
-      <h2>Enter Stock Ticker</h2>
+      <h2>Enter Stock Ticker(s)</h2>
       <form onsubmit="return searchTicker(event)">
-        <input type="text" id="tickerInput" placeholder="e.g., AAPL" autocomplete="off" autofocus>
+        <input type="text" id="tickerInput" placeholder="e.g., AAPL or AAPL MSFT GOOGL" autocomplete="off" autofocus>
         <button type="submit" class="btn btn-primary">Analyze</button>
       </form>
+      <p class="modal-hint">Enter multiple tickers (up to 5) separated by spaces to compare</p>
     </div>
   </div>
 

@@ -1,0 +1,466 @@
+<div class="compare-page">
+  <div class="compare-header">
+    <h1>
+      <i class="fas fa-balance-scale"></i>
+      Stock Comparison
+    </h1>
+    <p class="compare-subtitle">
+      Comparing <%= @tickers.join(', ') %>
+    </p>
+  </div>
+
+  <% if @errors.any? %>
+  <div class="compare-warnings">
+    <% @errors.each do |ticker, error| %>
+    <div class="warning-alert">
+      <i class="fas fa-exclamation-triangle"></i>
+      <strong><%= ticker %>:</strong> <%= error %>
+    </div>
+    <% end %>
+  </div>
+  <% end %>
+
+  <% if @stocks_data.any? %>
+  <%
+    # Define indicator configurations with direction (higher_is_better)
+    # nil means neutral (no best/worst highlighting)
+    indicators = [
+      { section: 'Price & Performance', items: [
+        { key: :current_price, label: 'Current Price', format: :currency, higher_is_better: nil },
+        { key: :change_pct, label: 'Daily Change', format: :percent_sign, higher_is_better: true },
+        { key: :ytd_return, label: 'YTD Return', format: :percent_sign, higher_is_better: true },
+        { key: :high_52w, label: '52-Week High', format: :currency, higher_is_better: nil },
+        { key: :low_52w, label: '52-Week Low', format: :currency, higher_is_better: nil },
+        { key: :avg_volume, label: 'Avg Volume', format: :number, higher_is_better: nil },
+      ]},
+      { section: 'Momentum Indicators', items: [
+        { key: :rsi, label: 'RSI (14)', format: :decimal2, higher_is_better: nil, note: '30-70 neutral' },
+        { key: :macd, label: 'MACD Line', format: :decimal3, higher_is_better: true },
+        { key: :macd_hist, label: 'MACD Histogram', format: :decimal3, higher_is_better: true },
+        { key: :stoch_k, label: 'Stochastic %K', format: :decimal2, higher_is_better: nil, note: '20-80 neutral' },
+        { key: :stoch_d, label: 'Stochastic %D', format: :decimal2, higher_is_better: nil },
+        { key: :mom, label: 'Momentum (10)', format: :decimal2, higher_is_better: true },
+        { key: :roc, label: 'Rate of Change', format: :percent, higher_is_better: true },
+        { key: :cci, label: 'CCI (14)', format: :decimal2, higher_is_better: nil, note: '-100 to +100 neutral' },
+        { key: :willr, label: "Williams %R", format: :decimal2, higher_is_better: nil, note: '-80 to -20 neutral' },
+      ]},
+      { section: 'Trend Indicators', items: [
+        { key: :adx, label: 'ADX (14)', format: :decimal2, higher_is_better: true, note: 'Trend strength' },
+        { key: :sma_50, label: 'SMA (50)', format: :currency, higher_is_better: nil },
+        { key: :sma_200, label: 'SMA (200)', format: :currency, higher_is_better: nil },
+        { key: :ema_20, label: 'EMA (20)', format: :currency, higher_is_better: nil },
+      ]},
+      { section: 'Volatility', items: [
+        { key: :atr, label: 'ATR (14)', format: :decimal2, higher_is_better: false, note: 'Lower = less volatile' },
+        { key: :bb_upper, label: 'Bollinger Upper', format: :currency, higher_is_better: nil },
+        { key: :bb_middle, label: 'Bollinger Middle', format: :currency, higher_is_better: nil },
+        { key: :bb_lower, label: 'Bollinger Lower', format: :currency, higher_is_better: nil },
+        { key: :beta, label: 'Beta', format: :decimal3, higher_is_better: nil, note: '1.0 = market' },
+      ]},
+      { section: 'Valuation', items: [
+        { key: :pe_ratio, label: 'P/E Ratio', format: :decimal2, higher_is_better: false },
+        { key: :forward_pe, label: 'Forward P/E', format: :decimal2, higher_is_better: false },
+        { key: :peg_ratio, label: 'PEG Ratio', format: :decimal2, higher_is_better: false },
+        { key: :price_to_book, label: 'Price/Book', format: :decimal2, higher_is_better: false },
+        { key: :market_cap, label: 'Market Cap', format: :currency_billions, higher_is_better: nil },
+      ]},
+      { section: 'Profitability', items: [
+        { key: :eps, label: 'EPS', format: :currency, higher_is_better: true },
+        { key: :profit_margin, label: 'Profit Margin', format: :percent_from_decimal, higher_is_better: true },
+        { key: :operating_margin, label: 'Operating Margin', format: :percent_from_decimal, higher_is_better: true },
+        { key: :roe, label: 'Return on Equity', format: :percent_from_decimal, higher_is_better: true },
+        { key: :roa, label: 'Return on Assets', format: :percent_from_decimal, higher_is_better: true },
+        { key: :dividend_yield, label: 'Dividend Yield', format: :percent_from_decimal, higher_is_better: true },
+      ]},
+      { section: 'Risk Metrics', items: [
+        { key: :sharpe_ratio, label: 'Sharpe Ratio', format: :decimal2, higher_is_better: true },
+        { key: :max_drawdown, label: 'Max Drawdown', format: :percent_from_decimal, higher_is_better: false, note: 'Closer to 0 is better' },
+        { key: :analyst_target, label: 'Analyst Target', format: :currency, higher_is_better: nil },
+      ]},
+    ]
+  %>
+
+  <div class="compare-table-container">
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th class="metric-header">Metric</th>
+          <% @tickers.each do |ticker| %>
+            <% if @stocks_data[ticker] %>
+            <th class="ticker-header">
+              <div class="ticker-name"><%= ticker %></div>
+              <% if @stocks_data[ticker][:company_name] %>
+              <div class="company-name"><%= @stocks_data[ticker][:company_name] %></div>
+              <% end %>
+            </th>
+            <% end %>
+          <% end %>
+        </tr>
+      </thead>
+      <tbody>
+        <% indicators.each do |section| %>
+        <tr class="section-row">
+          <td colspan="<%= @stocks_data.length + 1 %>" class="section-header">
+            <%= section[:section] %>
+          </td>
+        </tr>
+        <% section[:items].each do |item| %>
+          <%
+            best_ticker, worst_ticker = find_extremes(@stocks_data, item[:key], item[:higher_is_better])
+          %>
+        <tr>
+          <td class="metric-label">
+            <%= item[:label] %>
+            <% if item[:note] %>
+            <span class="metric-note"><%= item[:note] %></span>
+            <% end %>
+          </td>
+          <% @tickers.each do |ticker| %>
+            <% if @stocks_data[ticker] %>
+              <%
+                value = @stocks_data[ticker][item[:key]]
+                formatted = format_compare_value(value, item[:format])
+                cell_class = ''
+                if value && item[:higher_is_better] != nil
+                  if ticker == best_ticker
+                    cell_class = 'best-value'
+                  elsif ticker == worst_ticker
+                    cell_class = 'worst-value'
+                  end
+                end
+                # Special coloring for percent changes
+                if [:percent_sign].include?(item[:format]) && value
+                  cell_class += value >= 0 ? ' positive' : ' negative'
+                end
+              %>
+          <td class="metric-value <%= cell_class %>"><%= formatted %></td>
+            <% end %>
+          <% end %>
+        </tr>
+        <% end %>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="compare-legend">
+    <h3>Legend</h3>
+    <div class="legend-items">
+      <div class="legend-item">
+        <span class="legend-color best"></span>
+        <span>Best value in comparison</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-color worst"></span>
+        <span>Worst value in comparison</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-color neutral"></span>
+        <span>Neutral / context-dependent</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="compare-actions">
+    <h3>Individual Analysis</h3>
+    <div class="action-buttons">
+      <% @tickers.each do |ticker| %>
+        <% if @stocks_data[ticker] %>
+        <div class="ticker-actions">
+          <span class="ticker-label"><%= ticker %></span>
+          <a href="/dashboard/<%= ticker %>" class="btn btn-small">Dashboard</a>
+          <a href="/analyze/<%= ticker %>" class="btn btn-small">Analysis</a>
+          <a href="/company/<%= ticker %>" class="btn btn-small">Company</a>
+        </div>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+  <% else %>
+  <div class="no-data">
+    <i class="fas fa-exclamation-circle"></i>
+    <p>No stock data could be loaded. Please check the ticker symbols and try again.</p>
+  </div>
+  <% end %>
+</div>
+
+<style>
+.compare-page {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.compare-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.compare-header h1 {
+  color: #e8eaf6;
+  font-size: 2rem;
+  margin: 0 0 10px 0;
+}
+
+.compare-header h1 i {
+  color: #00d4ff;
+  margin-right: 10px;
+}
+
+.compare-subtitle {
+  color: #9fa8da;
+  font-size: 1.1rem;
+}
+
+.compare-warnings {
+  margin-bottom: 20px;
+}
+
+.warning-alert {
+  background: rgba(255, 152, 0, 0.15);
+  border: 1px solid #ff9800;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 10px;
+  color: #ffb74d;
+}
+
+.warning-alert i {
+  margin-right: 8px;
+}
+
+.compare-table-container {
+  overflow-x: auto;
+  margin-bottom: 30px;
+  border-radius: 10px;
+  border: 1px solid #2a3154;
+}
+
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #1a2248;
+}
+
+.compare-table th,
+.compare-table td {
+  padding: 12px 16px;
+  text-align: right;
+  border-bottom: 1px solid #2a3154;
+}
+
+.compare-table th:first-child,
+.compare-table td:first-child {
+  text-align: left;
+  position: sticky;
+  left: 0;
+  background: #1a2248;
+  z-index: 1;
+}
+
+.metric-header {
+  background: #232b52;
+  color: #9fa8da;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 0.5px;
+}
+
+.ticker-header {
+  background: #232b52;
+  color: #e8eaf6;
+  min-width: 150px;
+}
+
+.ticker-header .ticker-name {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #00d4ff;
+}
+
+.ticker-header .company-name {
+  font-size: 0.8rem;
+  color: #9fa8da;
+  font-weight: normal;
+  margin-top: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+}
+
+.section-row td {
+  background: #141a36 !important;
+  font-weight: bold;
+  color: #00d4ff;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 10px 16px;
+}
+
+.metric-label {
+  color: #b0b8d9;
+  font-size: 0.9rem;
+}
+
+.metric-note {
+  display: block;
+  font-size: 0.75rem;
+  color: #7986cb;
+  font-weight: normal;
+  margin-top: 2px;
+}
+
+.metric-value {
+  color: #e8eaf6;
+  font-family: 'Roboto Mono', monospace;
+  font-size: 0.9rem;
+}
+
+.metric-value.best-value {
+  background: rgba(0, 255, 136, 0.15);
+  color: #00ff88;
+  font-weight: bold;
+}
+
+.metric-value.worst-value {
+  background: rgba(255, 51, 102, 0.15);
+  color: #ff3366;
+}
+
+.metric-value.positive {
+  color: #00ff88;
+}
+
+.metric-value.negative {
+  color: #ff3366;
+}
+
+.compare-legend {
+  background: #1a2248;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 30px;
+  border: 1px solid #2a3154;
+}
+
+.compare-legend h3 {
+  color: #e8eaf6;
+  margin: 0 0 15px 0;
+  font-size: 1rem;
+}
+
+.legend-items {
+  display: flex;
+  gap: 30px;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #9fa8da;
+  font-size: 0.9rem;
+}
+
+.legend-color {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+}
+
+.legend-color.best {
+  background: rgba(0, 255, 136, 0.3);
+  border: 2px solid #00ff88;
+}
+
+.legend-color.worst {
+  background: rgba(255, 51, 102, 0.3);
+  border: 2px solid #ff3366;
+}
+
+.legend-color.neutral {
+  background: #2a3154;
+  border: 2px solid #5c6bc0;
+}
+
+.compare-actions {
+  background: #1a2248;
+  border-radius: 10px;
+  padding: 20px;
+  border: 1px solid #2a3154;
+}
+
+.compare-actions h3 {
+  color: #e8eaf6;
+  margin: 0 0 15px 0;
+  font-size: 1rem;
+}
+
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ticker-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.ticker-label {
+  color: #00d4ff;
+  font-weight: bold;
+  min-width: 60px;
+}
+
+.btn-small {
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  background: #2a3154;
+  color: #e8eaf6;
+  border: 1px solid #3d4a7a;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.btn-small:hover {
+  background: #3d4a7a;
+  border-color: #00d4ff;
+}
+
+.no-data {
+  text-align: center;
+  padding: 60px 20px;
+  color: #9fa8da;
+}
+
+.no-data i {
+  font-size: 3rem;
+  color: #ff9800;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 768px) {
+  .compare-table th,
+  .compare-table td {
+    padding: 8px 10px;
+    font-size: 0.85rem;
+  }
+
+  .ticker-header .company-name {
+    display: none;
+  }
+
+  .legend-items {
+    flex-direction: column;
+    gap: 10px;
+  }
+}
+</style>

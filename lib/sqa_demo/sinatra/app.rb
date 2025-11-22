@@ -40,6 +40,46 @@ module SqaDemo
           value.to_s.reverse.gsub(/(\d{3})(?=\d)/, '\\1,').reverse
         end
 
+        # Format comparison value based on type
+        def format_compare_value(value, format_type)
+          return 'N/A' if value.nil?
+          case format_type
+          when :currency
+            sprintf('$%.2f', value)
+          when :currency_billions
+            sprintf('$%.2fB', value / 1_000_000_000.0)
+          when :percent
+            sprintf('%.2f%%', value)
+          when :percent_sign
+            prefix = value >= 0 ? '+' : ''
+            "#{prefix}#{sprintf('%.2f', value)}%"
+          when :percent_from_decimal
+            sprintf('%.1f%%', value * 100)
+          when :decimal2
+            sprintf('%.2f', value)
+          when :decimal3
+            sprintf('%.3f', value)
+          when :number
+            value.to_s.reverse.gsub(/(\d{3})(?=\d)/, '\\1,').reverse
+          else
+            value.to_s
+          end
+        end
+
+        # Find best/worst tickers for a given metric
+        def find_extremes(stocks_data, key, higher_is_better)
+          return [nil, nil] if higher_is_better.nil?
+          values = stocks_data.map { |t, d| [t, d[key]] }.reject { |_, v| v.nil? }
+          return [nil, nil] if values.empty?
+
+          sorted = values.sort_by { |_, v| v }
+          if higher_is_better
+            [sorted.last[0], sorted.first[0]]  # best is highest, worst is lowest
+          else
+            [sorted.first[0], sorted.last[0]]  # best is lowest, worst is highest
+          end
+        end
+
         # Filter data arrays by time period
         # period can be: "30d", "60d", "90d", "1q", "2q", "3q", "4q", "all"
         def filter_by_period(dates, *data_arrays, period: 'all')
@@ -141,6 +181,170 @@ module SqaDemo
       # Portfolio optimizer
       get '/portfolio' do
         erb :portfolio
+      end
+
+      # Stock comparison page (compare multiple tickers)
+      get '/compare' do
+        tickers_param = params[:tickers] || ''
+        @tickers = tickers_param.split(/\s+/).map(&:upcase).uniq.first(5)
+
+        if @tickers.empty?
+          @error = "No tickers provided. Enter up to 5 tickers separated by spaces."
+          return erb :error
+        end
+
+        if tickers_param.split(/\s+/).map(&:upcase).uniq.length > 5
+          @error = "Maximum of 5 tickers allowed for comparison. Please reduce your selection."
+          return erb :error
+        end
+
+        @stocks_data = {}
+        @errors = {}
+
+        # Fetch data for each ticker in parallel using threads
+        threads = @tickers.map do |ticker|
+          Thread.new(ticker) do |t|
+            begin
+              stock = SQA::Stock.new(ticker: t)
+              df = stock.df
+              prices = df["adj_close_price"].to_a
+              volumes = df["volume"].to_a
+              dates = df["timestamp"].to_a.map(&:to_s)
+              highs = df["high_price"].to_a
+              lows = df["low_price"].to_a
+
+              # Get company overview
+              raw_overview = stock.overview || {}
+              overview = raw_overview.transform_keys(&:to_sym)
+
+              # Fallback to ticker lookup
+              if overview.empty?
+                ticker_info = SQA::Ticker.lookup(t)
+                company_name = ticker_info[:name] if ticker_info
+              else
+                company_name = overview[:name]
+              end
+
+              # Calculate basic metrics
+              current_price = prices.last
+              prev_price = prices[-2] || prices.last
+              change = current_price - prev_price
+              change_pct = prev_price > 0 ? (change / prev_price * 100) : 0
+
+              # Calculate technical indicators
+              rsi = SQAI.rsi(prices, period: 14).last rescue nil
+              macd_result = SQAI.macd(prices) rescue [[], [], []]
+              macd_line = macd_result[0].last rescue nil
+              macd_signal = macd_result[1].last rescue nil
+              macd_hist = macd_result[2].last rescue nil
+
+              stoch_result = SQAI.stoch(highs, lows, prices) rescue [[], []]
+              stoch_k = stoch_result[0].last rescue nil
+              stoch_d = stoch_result[1].last rescue nil
+
+              sma_50 = SQAI.sma(prices, period: 50).last rescue nil
+              sma_200 = SQAI.sma(prices, period: 200).last rescue nil
+              ema_20 = SQAI.ema(prices, period: 20).last rescue nil
+
+              bb_result = SQAI.bbands(prices) rescue [[], [], []]
+              bb_upper = bb_result[0].last rescue nil
+              bb_middle = bb_result[1].last rescue nil
+              bb_lower = bb_result[2].last rescue nil
+
+              adx = SQAI.adx(highs, lows, prices, period: 14).last rescue nil
+              atr = SQAI.atr(highs, lows, prices, period: 14).last rescue nil
+              cci = SQAI.cci(highs, lows, prices, period: 14).last rescue nil
+              willr = SQAI.willr(highs, lows, prices, period: 14).last rescue nil
+              mom = SQAI.mom(prices, period: 10).last rescue nil
+              roc = SQAI.roc(prices, period: 10).last rescue nil
+
+              # Calculate 52-week high/low
+              high_52w = prices.last(252).max rescue prices.max
+              low_52w = prices.last(252).min rescue prices.min
+
+              # Calculate YTD return
+              require 'date'
+              current_year = Date.today.year
+              ytd_prices = dates.each_with_index.select { |d, _| Date.parse(d).year == current_year }.map { |_, i| prices[i] }
+              ytd_return = if ytd_prices.length > 1
+                ((ytd_prices.last - ytd_prices.first) / ytd_prices.first * 100).round(2)
+              else
+                nil
+              end
+
+              # Risk metrics
+              returns = prices.each_cons(2).map { |a, b| (b - a) / a }
+              sharpe = SQA::RiskManager.sharpe_ratio(returns) rescue nil
+              max_dd = SQA::RiskManager.max_drawdown(prices) rescue nil
+              max_drawdown = max_dd ? max_dd[:max_drawdown] : nil
+
+              # Average volume
+              avg_volume = (volumes.sum.to_f / volumes.length).round rescue nil
+
+              [t, {
+                ticker: t,
+                company_name: company_name,
+                current_price: current_price,
+                change: change,
+                change_pct: change_pct,
+                high_52w: high_52w,
+                low_52w: low_52w,
+                ytd_return: ytd_return,
+                avg_volume: avg_volume,
+                # Technical indicators
+                rsi: rsi,
+                macd: macd_line,
+                macd_signal: macd_signal,
+                macd_hist: macd_hist,
+                stoch_k: stoch_k,
+                stoch_d: stoch_d,
+                sma_50: sma_50,
+                sma_200: sma_200,
+                ema_20: ema_20,
+                bb_upper: bb_upper,
+                bb_middle: bb_middle,
+                bb_lower: bb_lower,
+                adx: adx,
+                atr: atr,
+                cci: cci,
+                willr: willr,
+                mom: mom,
+                roc: roc,
+                # Fundamental data from overview
+                pe_ratio: overview[:pe_ratio],
+                forward_pe: overview[:forward_pe],
+                peg_ratio: overview[:peg_ratio],
+                price_to_book: overview[:price_to_book_ratio],
+                eps: overview[:eps],
+                dividend_yield: overview[:dividend_yield],
+                profit_margin: overview[:profit_margin],
+                operating_margin: overview[:operating_margin_ttm],
+                roe: overview[:return_on_equity_ttm],
+                roa: overview[:return_on_assets_ttm],
+                market_cap: overview[:market_capitalization],
+                beta: overview[:beta],
+                analyst_target: overview[:analyst_target_price],
+                # Risk metrics
+                sharpe_ratio: sharpe,
+                max_drawdown: max_drawdown
+              }]
+            rescue => e
+              [t, { error: e.message }]
+            end
+          end
+        end
+
+        # Wait for all threads to complete
+        threads.each do |thread|
+          ticker, data = thread.value
+          if data[:error]
+            @errors[ticker] = data[:error]
+          else
+            @stocks_data[ticker] = data
+          end
+        end
+
+        erb :compare
       end
 
       # Company details page
