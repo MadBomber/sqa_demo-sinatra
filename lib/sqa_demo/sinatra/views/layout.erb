@@ -15,20 +15,100 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-  <!-- Navigation -->
-  <nav class="navbar">
-    <div class="nav-container">
-      <div class="nav-brand">
-        <i class="fas fa-chart-line"></i>
-        <span>SQA Analytics</span>
+  <!-- Sticky Header Container -->
+  <header class="site-header">
+    <!-- Primary Navigation -->
+    <nav class="navbar">
+      <div class="nav-container">
+        <a href="/" class="nav-brand">
+          <i class="fas fa-chart-line"></i>
+          <span>SQA Analytics</span>
+        </a>
+        <ul class="nav-menu">
+          <li><a href="/" class="nav-link"><i class="fas fa-home"></i> Home</a></li>
+          <li class="nav-dropdown">
+            <a href="#" class="nav-link nav-dropdown-toggle"><i class="fas fa-chart-area"></i> Dashboard <i class="fas fa-caret-down"></i></a>
+            <div class="nav-dropdown-menu">
+              <a href="#" onclick="navigateToStock('dashboard'); return false;">Enter Ticker...</a>
+              <div class="nav-dropdown-divider"></div>
+              <span class="nav-dropdown-label">Popular</span>
+              <a href="/dashboard/AAPL">AAPL</a>
+              <a href="/dashboard/MSFT">MSFT</a>
+              <a href="/dashboard/GOOGL">GOOGL</a>
+              <a href="/dashboard/TSLA">TSLA</a>
+            </div>
+          </li>
+          <li class="nav-dropdown">
+            <a href="#" class="nav-link nav-dropdown-toggle"><i class="fas fa-microscope"></i> Analysis <i class="fas fa-caret-down"></i></a>
+            <div class="nav-dropdown-menu">
+              <a href="#" onclick="navigateToStock('analyze'); return false;">Enter Ticker...</a>
+              <div class="nav-dropdown-divider"></div>
+              <span class="nav-dropdown-label">Popular</span>
+              <a href="/analyze/AAPL">AAPL</a>
+              <a href="/analyze/MSFT">MSFT</a>
+              <a href="/analyze/GOOGL">GOOGL</a>
+              <a href="/analyze/TSLA">TSLA</a>
+            </div>
+          </li>
+          <li class="nav-dropdown">
+            <a href="#" class="nav-link nav-dropdown-toggle"><i class="fas fa-flask"></i> Backtest <i class="fas fa-caret-down"></i></a>
+            <div class="nav-dropdown-menu">
+              <a href="#" onclick="navigateToStock('backtest'); return false;">Enter Ticker...</a>
+              <div class="nav-dropdown-divider"></div>
+              <span class="nav-dropdown-label">Popular</span>
+              <a href="/backtest/AAPL">AAPL</a>
+              <a href="/backtest/MSFT">MSFT</a>
+              <a href="/backtest/GOOGL">GOOGL</a>
+              <a href="/backtest/TSLA">TSLA</a>
+            </div>
+          </li>
+          <li><a href="/portfolio" class="nav-link"><i class="fas fa-briefcase"></i> Portfolio</a></li>
+        </ul>
+        <button class="nav-search-btn" onclick="showTickerModal()" title="Search Stock">
+          <i class="fas fa-search"></i>
+        </button>
       </div>
-      <ul class="nav-menu">
-        <li><a href="/" class="nav-link"><i class="fas fa-home"></i> Home</a></li>
-        <li><a href="#" class="nav-link" onclick="showTickerModal()"><i class="fas fa-search"></i> Analyze Stock</a></li>
-        <li><a href="/portfolio" class="nav-link"><i class="fas fa-briefcase"></i> Portfolio</a></li>
-      </ul>
+    </nav>
+
+    <!-- Context Bar (shown on stock-specific pages) -->
+    <% if defined?(@ticker) && @ticker %>
+    <div class="context-bar">
+      <div class="context-container">
+        <div class="context-stock">
+          <span class="context-ticker"><%= @ticker %></span>
+          <span class="context-name"><%= @company_name || @ticker %></span>
+        </div>
+        <nav class="context-nav">
+          <a href="/dashboard/<%= @ticker %>" class="context-link <%= 'active' if request.path_info.start_with?('/dashboard') %>">
+            <i class="fas fa-chart-area"></i> Dashboard
+          </a>
+          <a href="/analyze/<%= @ticker %>" class="context-link <%= 'active' if request.path_info.start_with?('/analyze') %>">
+            <i class="fas fa-microscope"></i> Analysis
+          </a>
+          <a href="/backtest/<%= @ticker %>" class="context-link <%= 'active' if request.path_info.start_with?('/backtest') %>">
+            <i class="fas fa-flask"></i> Backtest
+          </a>
+          <a href="/company/<%= @ticker %>" class="context-link <%= 'active' if request.path_info.start_with?('/company') %>">
+            <i class="fas fa-building"></i> Company
+          </a>
+        </nav>
+        <% if defined?(@show_period_selector) && @show_period_selector %>
+        <div class="context-period">
+          <select id="headerPeriodSelect" onchange="changePeriod(this.value)">
+            <option value="30">30 Days</option>
+            <option value="60">60 Days</option>
+            <option value="90" selected>90 Days</option>
+            <option value="1q">1 Quarter</option>
+            <option value="2q">2 Quarters</option>
+            <option value="1y">1 Year</option>
+            <option value="all">All Data</option>
+          </select>
+        </div>
+        <% end %>
+      </div>
     </div>
-  </nav>
+    <% end %>
+  </header>
 
   <!-- Main Content -->
   <main class="main-content">

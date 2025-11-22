@@ -96,6 +96,7 @@ module SqaDemo
         begin
           @stock = SQA::Stock.new(ticker: ticker)
           @ticker = ticker
+          @show_period_selector = true
           ticker_info = SQA::Ticker.lookup(ticker)
           @company_name = ticker_info[:name] if ticker_info
           erb :dashboard
@@ -112,6 +113,8 @@ module SqaDemo
         begin
           @stock = SQA::Stock.new(ticker: ticker)
           @ticker = ticker
+          ticker_info = SQA::Ticker.lookup(ticker)
+          @company_name = ticker_info[:name] if ticker_info
           erb :analyze
         rescue => e
           @error = "Failed to load data for #{ticker}: #{e.message}"
@@ -126,6 +129,8 @@ module SqaDemo
         begin
           @stock = SQA::Stock.new(ticker: ticker)
           @ticker = ticker
+          ticker_info = SQA::Ticker.lookup(ticker)
+          @company_name = ticker_info[:name] if ticker_info
           erb :backtest
         rescue => e
           @error = "Failed to load data for #{ticker}: #{e.message}"
@@ -541,14 +546,71 @@ module SqaDemo
           # Seasonal analysis
           seasonal = SQA::SeasonalAnalyzer.analyze(stock)
 
-          # FPOP analysis
-          fpop_data = SQA::FPOP.fpl_analysis(prices, fpop: 10)
-          recent_fpop = fpop_data.last(10).map do |f|
-            {
+          # FPOP analysis - shows historical (verifiable) + future predictions
+          require 'date'
+          dates = stock.df["timestamp"].to_a.map(&:to_s)
+          last_date = Date.parse(dates.last)
+          fpop_period = 10
+          fpop_data = SQA::FPOP.fpl_analysis(prices, fpop: fpop_period)
+
+          # Generate future trading dates (skip weekends) starting after last_date
+          future_dates = []
+          current_date = last_date + 1
+          while future_dates.length < fpop_period
+            unless current_date.saturday? || current_date.sunday?
+              future_dates << current_date.to_s
+            end
+            current_date += 1
+          end
+
+          # Show last 5 historical predictions (verifiable) + 10 future predictions
+          num_historical = [5, dates.length - 1].min
+          recent_fpop = []
+
+          # Historical: predictions with actual results for verification
+          hist_start = dates.length - num_historical - 1
+          (0...num_historical).each do |i|
+            idx = hist_start + i
+            target_idx = idx + 1
+            next if idx < 0 || idx >= fpop_data.length || target_idx >= prices.length
+
+            # Calculate actual price change
+            prev_price = prices[idx]
+            actual_price = prices[target_idx]
+            actual_change = ((actual_price - prev_price) / prev_price) * 100
+            actual_direction = actual_change > 0.1 ? 'UP' : (actual_change < -0.1 ? 'DOWN' : 'FLAT')
+
+            # Determine if prediction was correct
+            # Correct if absolute difference between predicted magnitude and actual change is <= 1%
+            predicted_magnitude = fpop_data[idx][:magnitude]
+            difference = (predicted_magnitude - actual_change).abs
+            correct = difference <= 1.0
+
+            recent_fpop << {
+              date: dates[target_idx],
+              direction: fpop_data[idx][:direction],
+              magnitude: fpop_data[idx][:magnitude],
+              risk: fpop_data[idx][:risk],
+              interpretation: fpop_data[idx][:interpretation],
+              actual_change: actual_change.round(2),
+              actual_direction: actual_direction,
+              correct: correct,
+              is_future: false
+            }
+          end
+
+          # Future: predictions starting from the day after last_date
+          fpop_data.last(fpop_period).each_with_index do |f, i|
+            recent_fpop << {
+              date: future_dates[i],
               direction: f[:direction],
               magnitude: f[:magnitude],
               risk: f[:risk],
-              interpretation: f[:interpretation]
+              interpretation: f[:interpretation],
+              actual_change: nil,
+              actual_direction: nil,
+              correct: nil,
+              is_future: true
             }
           end
 

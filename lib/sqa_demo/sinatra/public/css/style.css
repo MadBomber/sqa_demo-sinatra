@@ -31,19 +31,24 @@ body {
   line-height: 1.6;
 }
 
-/* Navigation */
-.navbar {
-  background: linear-gradient(135deg, var(--dark-bg) 0%, #16213e 100%);
-  color: white;
-  padding: 1rem 0;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+/* Sticky Header Container */
+.site-header {
   position: sticky;
   top: 0;
   z-index: 1000;
+  background: var(--dark-bg);
+}
+
+/* Primary Navigation */
+.navbar {
+  background: linear-gradient(135deg, var(--dark-bg) 0%, #16213e 100%);
+  color: white;
+  padding: 0.75rem 0;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 }
 
 .nav-container {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 0 2rem;
   display: flex;
@@ -52,11 +57,17 @@ body {
 }
 
 .nav-brand {
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   font-weight: 700;
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  text-decoration: none;
+  color: white;
+}
+
+.nav-brand:hover {
+  color: white;
 }
 
 .nav-brand i {
@@ -66,21 +77,195 @@ body {
 .nav-menu {
   display: flex;
   list-style: none;
-  gap: 2rem;
+  gap: 0.5rem;
+  align-items: center;
 }
 
 .nav-link {
-  color: white;
+  color: var(--text-secondary);
   text-decoration: none;
   font-weight: 500;
-  transition: color 0.3s ease;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
 }
 
 .nav-link:hover {
   color: var(--primary-color);
+  background: rgba(0, 212, 255, 0.1);
+}
+
+.nav-link i.fa-caret-down {
+  font-size: 0.75rem;
+  margin-left: 0.25rem;
+}
+
+/* Navigation Dropdowns */
+.nav-dropdown {
+  position: relative;
+}
+
+.nav-dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  min-width: 180px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  padding: 0.5rem 0;
+  margin-top: 0.25rem;
+  z-index: 1001;
+}
+
+.nav-dropdown:hover .nav-dropdown-menu {
+  display: block;
+}
+
+.nav-dropdown-menu a {
+  display: block;
+  padding: 0.6rem 1rem;
+  color: var(--text-primary);
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: background 0.2s ease;
+}
+
+.nav-dropdown-menu a:hover {
+  background: var(--card-bg-lighter);
+  color: var(--primary-color);
+}
+
+.nav-dropdown-divider {
+  height: 1px;
+  background: var(--border-color);
+  margin: 0.5rem 0;
+}
+
+.nav-dropdown-label {
+  display: block;
+  padding: 0.4rem 1rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+}
+
+/* Search Button in Nav */
+.nav-search-btn {
+  background: var(--card-bg-lighter);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.nav-search-btn:hover {
+  background: var(--card-bg);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+/* Context Bar - Stock-specific navigation */
+.context-bar {
+  background: var(--card-bg);
+  border-top: 2px solid var(--primary-color);
+  padding: 0.5rem 0;
+}
+
+.context-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.context-stock {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.context-ticker {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--success-color);
+}
+
+.context-name {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.context-nav {
+  display: flex;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.context-link {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.9rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.context-link:hover {
+  color: var(--text-primary);
+  background: var(--card-bg-lighter);
+  border-color: var(--border-color);
+}
+
+.context-link.active {
+  background: var(--primary-color);
+  color: var(--dark-bg);
+  font-weight: 600;
+}
+
+.context-link i {
+  font-size: 0.8rem;
+}
+
+/* Period Selector in Context Bar */
+.context-period {
+  margin-left: auto;
+}
+
+.context-period select {
+  background: var(--card-bg-lighter);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  outline: none;
+}
+
+.context-period select:hover,
+.context-period select:focus {
+  border-color: var(--primary-color);
 }
 
 /* Main Content */
@@ -932,6 +1117,26 @@ body {
 }
 
 /* Responsive */
+@media (max-width: 1024px) {
+  .nav-menu {
+    gap: 0.25rem;
+  }
+
+  .nav-link {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.85rem;
+  }
+
+  .context-container {
+    gap: 1rem;
+  }
+
+  .context-link {
+    padding: 0.35rem 0.6rem;
+    font-size: 0.8rem;
+  }
+}
+
 @media (max-width: 768px) {
   .hero-content h1 {
     font-size: 2rem;
@@ -955,8 +1160,64 @@ body {
     grid-template-columns: 1fr;
   }
 
+  /* Mobile Navigation */
+  .nav-container {
+    padding: 0 1rem;
+  }
+
+  .nav-brand span {
+    display: none;
+  }
+
   .nav-menu {
-    gap: 1rem;
-    font-size: 0.875rem;
+    gap: 0.25rem;
+  }
+
+  .nav-link {
+    padding: 0.4rem 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  .nav-link i:first-child {
+    margin-right: 0;
+  }
+
+  .nav-link span,
+  .nav-link i.fa-caret-down {
+    display: none;
+  }
+
+  /* Context Bar Mobile */
+  .context-container {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0 1rem;
+  }
+
+  .context-stock {
+    width: 100%;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .context-nav {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+
+  .context-link {
+    padding: 0.3rem 0.5rem;
+    font-size: 0.75rem;
+  }
+
+  .context-period {
+    width: 100%;
+    margin-left: 0;
+    margin-top: 0.5rem;
+  }
+
+  .context-period select {
+    width: 100%;
   }
 }

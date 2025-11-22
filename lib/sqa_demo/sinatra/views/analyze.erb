@@ -118,6 +118,47 @@
   background: var(--light-bg);
 }
 
+.fpop-table small {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+}
+
+.fpop-future {
+  background: rgba(0, 212, 255, 0.05);
+  border-left: 3px solid var(--primary-color);
+}
+
+.verification-correct {
+  color: var(--success-color);
+  font-weight: 600;
+}
+
+.verification-correct i {
+  margin-right: 0.25rem;
+}
+
+.verification-wrong {
+  color: var(--danger-color);
+  font-weight: 600;
+}
+
+.verification-wrong i {
+  margin-right: 0.25rem;
+}
+
+.fpop-summary {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--light-bg);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.fpop-summary strong {
+  color: var(--primary-color);
+}
+
 .chart-subtitle {
   color: var(--text-secondary);
   font-size: 0.875rem;
@@ -243,10 +284,11 @@ function renderFPOPAnalysis(fpop) {
     <table class="fpop-table">
       <thead>
         <tr>
-          <th>Direction</th>
-          <th>Magnitude</th>
+          <th>Date</th>
+          <th>Predicted</th>
+          <th>Actual</th>
+          <th>Result</th>
           <th>Risk</th>
-          <th>Interpretation</th>
         </tr>
       </thead>
       <tbody>
@@ -256,17 +298,50 @@ function renderFPOPAnalysis(fpop) {
     const dirClass = f.direction === 'UP' ? 'signal-buy' :
                      f.direction === 'DOWN' ? 'signal-sell' : 'signal-neutral';
 
+    let actualCell, resultCell;
+
+    if (f.is_future) {
+      // Future prediction - no actual data yet
+      actualCell = '<span style="color: var(--text-secondary);">—</span>';
+      resultCell = '<span style="color: var(--text-secondary);">Pending</span>';
+    } else {
+      // Historical - show actual change and verification
+      const actualClass = f.actual_change > 0 ? 'signal-buy' : (f.actual_change < 0 ? 'signal-sell' : 'signal-neutral');
+      const sign = f.actual_change > 0 ? '+' : '';
+      actualCell = `<span class="${actualClass}">${sign}${f.actual_change}%</span>`;
+
+      if (f.correct) {
+        resultCell = '<span class="verification-correct"><i class="fas fa-check-circle"></i> Correct</span>';
+      } else {
+        resultCell = '<span class="verification-wrong"><i class="fas fa-times-circle"></i> Wrong</span>';
+      }
+    }
+
+    const rowClass = f.is_future ? 'fpop-future' : '';
+
     tableHTML += `
-      <tr>
-        <td><span class="${dirClass}">${f.direction}</span></td>
-        <td>${f.magnitude.toFixed(2)}%</td>
-        <td>${f.risk.toFixed(2)}%</td>
-        <td>${f.interpretation}</td>
+      <tr class="${rowClass}">
+        <td>${f.date}</td>
+        <td><span class="${dirClass}">${f.direction}</span> <small>(${f.magnitude.toFixed(1)}%)</small></td>
+        <td>${actualCell}</td>
+        <td>${resultCell}</td>
+        <td>±${f.risk.toFixed(1)}%</td>
       </tr>
     `;
   });
 
   tableHTML += '</tbody></table>';
+
+  // Calculate accuracy for historical predictions
+  const historical = fpop.filter(f => !f.is_future);
+  const correct = historical.filter(f => f.correct).length;
+  const accuracy = historical.length > 0 ? ((correct / historical.length) * 100).toFixed(0) : 0;
+
+  tableHTML += `
+    <div class="fpop-summary">
+      <span>Historical Accuracy: <strong>${correct}/${historical.length}</strong> (${accuracy}%)</span>
+    </div>
+  `;
 
   document.getElementById('fpopAnalysis').innerHTML = tableHTML;
 }
