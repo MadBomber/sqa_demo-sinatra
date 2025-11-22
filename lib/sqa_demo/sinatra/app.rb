@@ -320,35 +320,47 @@ module SqaDemo
           cdl_marubozu = pad_array.call(cdl_marubozu)
 
           # Detect patterns from the data
+          # Pattern types:
+          #   :neutral - always neutral signal (Doji)
+          #   :fixed - predetermined signal regardless of value sign
+          #   :directional - sign of value determines bullish (+) or bearish (-)
           pattern_defs = {
-            doji: { data: cdl_doji, name: 'Doji', signal: 'neutral' },
-            hammer: { data: cdl_hammer, name: 'Hammer', signal: 'bullish' },
-            shootingstar: { data: cdl_shootingstar, name: 'Shooting Star', signal: 'bearish' },
-            engulfing: { data: cdl_engulfing, name: 'Engulfing', signal: 'reversal' },
-            morningstar: { data: cdl_morningstar, name: 'Morning Star', signal: 'bullish' },
-            eveningstar: { data: cdl_eveningstar, name: 'Evening Star', signal: 'bearish' },
-            harami: { data: cdl_harami, name: 'Harami', signal: 'reversal' },
-            whitesoldiers: { data: cdl_3whitesoldiers, name: 'Three White Soldiers', signal: 'bullish' },
-            blackcrows: { data: cdl_3blackcrows, name: 'Three Black Crows', signal: 'bearish' },
-            piercing: { data: cdl_piercing, name: 'Piercing', signal: 'bullish' },
-            darkcloudcover: { data: cdl_darkcloudcover, name: 'Dark Cloud Cover', signal: 'bearish' },
-            marubozu: { data: cdl_marubozu, name: 'Marubozu', signal: 'momentum' }
+            doji: { data: cdl_doji, name: 'Doji', type: :neutral },
+            hammer: { data: cdl_hammer, name: 'Hammer', type: :fixed, signal: 'bullish' },
+            shootingstar: { data: cdl_shootingstar, name: 'Shooting Star', type: :fixed, signal: 'bearish' },
+            engulfing: { data: cdl_engulfing, name: 'Engulfing', type: :directional },
+            morningstar: { data: cdl_morningstar, name: 'Morning Star', type: :fixed, signal: 'bullish' },
+            eveningstar: { data: cdl_eveningstar, name: 'Evening Star', type: :fixed, signal: 'bearish' },
+            harami: { data: cdl_harami, name: 'Harami', type: :directional },
+            whitesoldiers: { data: cdl_3whitesoldiers, name: 'Three White Soldiers', type: :fixed, signal: 'bullish' },
+            blackcrows: { data: cdl_3blackcrows, name: 'Three Black Crows', type: :fixed, signal: 'bearish' },
+            piercing: { data: cdl_piercing, name: 'Piercing', type: :fixed, signal: 'bullish' },
+            darkcloudcover: { data: cdl_darkcloudcover, name: 'Dark Cloud Cover', type: :fixed, signal: 'bearish' },
+            marubozu: { data: cdl_marubozu, name: 'Marubozu', type: :directional }
           }
 
           detected_patterns = []
-          pattern_defs.each do |key, pdef|
+          pattern_defs.each do |_key, pdef|
             pdef[:data].each_with_index do |val, i|
               next if val.nil? || val == 0
+
+              signal = case pdef[:type]
+                       when :neutral then 'neutral'
+                       when :fixed then pdef[:signal]
+                       when :directional then val > 0 ? 'bullish' : 'bearish'
+                       end
+
               detected_patterns << {
                 date: dates[i],
                 pattern: pdef[:name],
-                signal: val > 0 ? (pdef[:signal] == 'reversal' ? 'bullish' : pdef[:signal]) : (pdef[:signal] == 'reversal' ? 'bearish' : pdef[:signal]),
+                signal: signal,
                 strength: val.abs
               }
             end
           end
-          # Sort by date descending and take last 20
-          detected_patterns.sort_by! { |p| p[:date] }.reverse!.slice!(20..-1)
+          # Sort by date descending and keep only 20 most recent
+          detected_patterns.sort_by! { |p| p[:date] }.reverse!
+          detected_patterns = detected_patterns.first(20)
 
           # Filter results by period (keep indicators aligned with dates)
           filtered_dates, filtered_rsi, filtered_macd, filtered_macd_signal, filtered_macd_hist,

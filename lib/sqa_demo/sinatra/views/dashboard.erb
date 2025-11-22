@@ -236,6 +236,22 @@
       </div>
       <div id="atrChart" class="chart chart-small"></div>
     </div>
+
+    <!-- ROC Chart -->
+    <div class="chart-container">
+      <div class="chart-header">
+        <h3><i class="fas fa-tachometer-alt"></i> ROC (10)</h3>
+      </div>
+      <div id="rocChart" class="chart chart-small"></div>
+    </div>
+
+    <!-- Momentum Chart -->
+    <div class="chart-container">
+      <div class="chart-header">
+        <h3><i class="fas fa-rocket"></i> Momentum (10)</h3>
+      </div>
+      <div id="momChart" class="chart chart-small"></div>
+    </div>
   </div>
 
   <!-- Pattern Recognition & Signal Alerts -->
@@ -292,6 +308,8 @@ let cciChart = null;
 let adxChart = null;
 let willrChart = null;
 let atrChart = null;
+let rocChart = null;
+let momChart = null;
 
 // Indicator configuration - Price Overlays
 const INDICATOR_CONFIG = {
@@ -445,6 +463,8 @@ async function loadIndicators() {
     renderADXChart();
     renderWillrChart();
     renderATRChart();
+    renderROCChart();
+    renderMomentumChart();
 
     // Render alerts
     renderPatternAlerts();
@@ -1465,6 +1485,138 @@ function renderATRChart() {
 
   atrChart = new ApexCharts(document.querySelector("#atrChart"), options);
   atrChart.render();
+}
+
+function renderROCChart() {
+  if (rocChart) {
+    rocChart.destroy();
+  }
+
+  if (!indicatorData || !indicatorData.roc_10) {
+    document.querySelector("#rocChart").innerHTML = '<p style="text-align: center; padding: 40px; color: #9fa8da;">ROC data not available</p>';
+    return;
+  }
+
+  const validDates = [];
+  const validROC = [];
+  for (let i = 0; i < indicatorData.roc_10.length; i++) {
+    if (indicatorData.dates[i] !== null &&
+        indicatorData.roc_10[i] !== null &&
+        !isNaN(indicatorData.roc_10[i])) {
+      validDates.push(indicatorData.dates[i]);
+      validROC.push(indicatorData.roc_10[i]);
+    }
+  }
+
+  if (validDates.length === 0) {
+    document.querySelector("#rocChart").innerHTML = '<p style="text-align: center; padding: 40px; color: #9fa8da;">No valid ROC data available</p>';
+    return;
+  }
+
+  // Zero line for reference
+  const zeroLine = validDates.map(() => 0);
+
+  const options = {
+    series: [
+      { name: 'ROC', data: validROC },
+      { name: 'Zero', data: zeroLine }
+    ],
+    chart: {
+      type: 'line',
+      height: 350,
+      group: 'stock-charts',
+      background: '#151b3d',
+      foreColor: '#e8eaf6',
+      toolbar: { show: true, tools: { download: true, zoom: true, zoomin: true, zoomout: true, pan: true, reset: true } },
+      zoom: { enabled: true, type: 'x' }
+    },
+    colors: ['#20bf6b', '#9fa8da'],
+    stroke: { width: [3, 1], curve: 'smooth', dashArray: [0, 5] },
+    xaxis: {
+      type: 'category',
+      categories: validDates,
+      tickAmount: 10,
+      labels: {
+        rotate: -45,
+        style: { colors: '#9fa8da' },
+        formatter: (val) => val ? `${val.split('-')[1]}/${val.split('-')[2]}` : ''
+      }
+    },
+    yaxis: { labels: { style: { colors: '#9fa8da' }, formatter: (val) => val ? val.toFixed(2) + '%' : '' } },
+    grid: { borderColor: '#2a3154', strokeDashArray: 3 },
+    legend: { position: 'top', horizontalAlign: 'left', fontSize: '14px', labels: { colors: '#e8eaf6' } },
+    theme: { mode: 'dark' },
+    tooltip: { theme: 'dark', shared: true, intersect: false, x: { formatter: (val, opts) => validDates[opts.dataPointIndex] || val } }
+  };
+
+  rocChart = new ApexCharts(document.querySelector("#rocChart"), options);
+  rocChart.render();
+}
+
+function renderMomentumChart() {
+  if (momChart) {
+    momChart.destroy();
+  }
+
+  if (!indicatorData || !indicatorData.mom_10) {
+    document.querySelector("#momChart").innerHTML = '<p style="text-align: center; padding: 40px; color: #9fa8da;">Momentum data not available</p>';
+    return;
+  }
+
+  const validDates = [];
+  const validMom = [];
+  for (let i = 0; i < indicatorData.mom_10.length; i++) {
+    if (indicatorData.dates[i] !== null &&
+        indicatorData.mom_10[i] !== null &&
+        !isNaN(indicatorData.mom_10[i])) {
+      validDates.push(indicatorData.dates[i]);
+      validMom.push(indicatorData.mom_10[i]);
+    }
+  }
+
+  if (validDates.length === 0) {
+    document.querySelector("#momChart").innerHTML = '<p style="text-align: center; padding: 40px; color: #9fa8da;">No valid Momentum data available</p>';
+    return;
+  }
+
+  // Zero line for reference
+  const zeroLine = validDates.map(() => 0);
+
+  const options = {
+    series: [
+      { name: 'Momentum', data: validMom },
+      { name: 'Zero', data: zeroLine }
+    ],
+    chart: {
+      type: 'line',
+      height: 350,
+      group: 'stock-charts',
+      background: '#151b3d',
+      foreColor: '#e8eaf6',
+      toolbar: { show: true, tools: { download: true, zoom: true, zoomin: true, zoomout: true, pan: true, reset: true } },
+      zoom: { enabled: true, type: 'x' }
+    },
+    colors: ['#f7b731', '#9fa8da'],
+    stroke: { width: [3, 1], curve: 'smooth', dashArray: [0, 5] },
+    xaxis: {
+      type: 'category',
+      categories: validDates,
+      tickAmount: 10,
+      labels: {
+        rotate: -45,
+        style: { colors: '#9fa8da' },
+        formatter: (val) => val ? `${val.split('-')[1]}/${val.split('-')[2]}` : ''
+      }
+    },
+    yaxis: { labels: { style: { colors: '#9fa8da' }, formatter: (val) => val ? '$' + val.toFixed(2) : '' } },
+    grid: { borderColor: '#2a3154', strokeDashArray: 3 },
+    legend: { position: 'top', horizontalAlign: 'left', fontSize: '14px', labels: { colors: '#e8eaf6' } },
+    theme: { mode: 'dark' },
+    tooltip: { theme: 'dark', shared: true, intersect: false, x: { formatter: (val, opts) => validDates[opts.dataPointIndex] || val } }
+  };
+
+  momChart = new ApexCharts(document.querySelector("#momChart"), options);
+  momChart.render();
 }
 
 function renderPatternAlerts() {
