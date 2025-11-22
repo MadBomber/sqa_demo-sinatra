@@ -655,6 +655,112 @@ body {
   border-radius: 0;
 }
 
+/* Alerts Section */
+.alerts-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.alerts-container {
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 0.5rem;
+}
+
+.alert-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.5rem;
+  background: var(--card-bg);
+  border-radius: 8px;
+  border-left: 4px solid var(--border-color);
+}
+
+.alert-item.bullish {
+  border-left-color: var(--positive-color);
+}
+
+.alert-item.bearish {
+  border-left-color: var(--negative-color);
+}
+
+.alert-item.neutral {
+  border-left-color: var(--primary-color);
+}
+
+.alert-item.momentum {
+  border-left-color: var(--warning-color);
+}
+
+.alert-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.alert-pattern {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.alert-date {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.alert-signal {
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.alert-signal.bullish {
+  background: rgba(76, 175, 80, 0.2);
+  color: var(--positive-color);
+}
+
+.alert-signal.bearish {
+  background: rgba(244, 67, 54, 0.2);
+  color: var(--negative-color);
+}
+
+.alert-signal.neutral {
+  background: rgba(33, 150, 243, 0.2);
+  color: var(--primary-color);
+}
+
+.alert-signal.momentum {
+  background: rgba(255, 152, 0, 0.2);
+  color: var(--warning-color);
+}
+
+.alert-signal.buy {
+  background: rgba(76, 175, 80, 0.2);
+  color: var(--positive-color);
+}
+
+.alert-signal.sell {
+  background: rgba(244, 67, 54, 0.2);
+  color: var(--negative-color);
+}
+
+.alert-signal.hold {
+  background: rgba(156, 39, 176, 0.2);
+  color: #ba68c8;
+}
+
+.no-alerts {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-muted);
+}
+
 .chart {
   width: 100%;
   height: 500px;

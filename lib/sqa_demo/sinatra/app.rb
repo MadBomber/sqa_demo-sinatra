@@ -204,6 +204,7 @@ module SqaDemo
           df = stock.df
 
           prices = df["adj_close_price"].to_a
+          opens = df["open_price"].to_a
           highs = df["high_price"].to_a
           lows = df["low_price"].to_a
           volumes = df["volume"].to_a
@@ -247,6 +248,20 @@ module SqaDemo
           vol_ema_12 = SQAI.ema(volumes, period: 12)
           vol_ema_20 = SQAI.ema(volumes, period: 20)
 
+          # Candlestick pattern recognition (high-priority patterns)
+          cdl_doji = SQAI.cdl_doji(opens, highs, lows, prices)
+          cdl_hammer = SQAI.cdl_hammer(opens, highs, lows, prices)
+          cdl_shootingstar = SQAI.cdl_shootingstar(opens, highs, lows, prices)
+          cdl_engulfing = SQAI.cdl_engulfing(opens, highs, lows, prices)
+          cdl_morningstar = SQAI.cdl_morningstar(opens, highs, lows, prices)
+          cdl_eveningstar = SQAI.cdl_eveningstar(opens, highs, lows, prices)
+          cdl_harami = SQAI.cdl_harami(opens, highs, lows, prices)
+          cdl_3whitesoldiers = SQAI.cdl_3whitesoldiers(opens, highs, lows, prices)
+          cdl_3blackcrows = SQAI.cdl_3blackcrows(opens, highs, lows, prices)
+          cdl_piercing = SQAI.cdl_piercing(opens, highs, lows, prices)
+          cdl_darkcloudcover = SQAI.cdl_darkcloudcover(opens, highs, lows, prices)
+          cdl_marubozu = SQAI.cdl_marubozu(opens, highs, lows, prices)
+
           # Pad indicator arrays with nil at the beginning to align with dates
           # Indicators return shorter arrays due to warmup periods
           pad_array = ->(arr) { Array.new(n - arr.length, nil) + arr }
@@ -289,6 +304,51 @@ module SqaDemo
           vol_sma_50 = pad_array.call(vol_sma_50)
           vol_ema_12 = pad_array.call(vol_ema_12)
           vol_ema_20 = pad_array.call(vol_ema_20)
+
+          # Pad pattern arrays
+          cdl_doji = pad_array.call(cdl_doji)
+          cdl_hammer = pad_array.call(cdl_hammer)
+          cdl_shootingstar = pad_array.call(cdl_shootingstar)
+          cdl_engulfing = pad_array.call(cdl_engulfing)
+          cdl_morningstar = pad_array.call(cdl_morningstar)
+          cdl_eveningstar = pad_array.call(cdl_eveningstar)
+          cdl_harami = pad_array.call(cdl_harami)
+          cdl_3whitesoldiers = pad_array.call(cdl_3whitesoldiers)
+          cdl_3blackcrows = pad_array.call(cdl_3blackcrows)
+          cdl_piercing = pad_array.call(cdl_piercing)
+          cdl_darkcloudcover = pad_array.call(cdl_darkcloudcover)
+          cdl_marubozu = pad_array.call(cdl_marubozu)
+
+          # Detect patterns from the data
+          pattern_defs = {
+            doji: { data: cdl_doji, name: 'Doji', signal: 'neutral' },
+            hammer: { data: cdl_hammer, name: 'Hammer', signal: 'bullish' },
+            shootingstar: { data: cdl_shootingstar, name: 'Shooting Star', signal: 'bearish' },
+            engulfing: { data: cdl_engulfing, name: 'Engulfing', signal: 'reversal' },
+            morningstar: { data: cdl_morningstar, name: 'Morning Star', signal: 'bullish' },
+            eveningstar: { data: cdl_eveningstar, name: 'Evening Star', signal: 'bearish' },
+            harami: { data: cdl_harami, name: 'Harami', signal: 'reversal' },
+            whitesoldiers: { data: cdl_3whitesoldiers, name: 'Three White Soldiers', signal: 'bullish' },
+            blackcrows: { data: cdl_3blackcrows, name: 'Three Black Crows', signal: 'bearish' },
+            piercing: { data: cdl_piercing, name: 'Piercing', signal: 'bullish' },
+            darkcloudcover: { data: cdl_darkcloudcover, name: 'Dark Cloud Cover', signal: 'bearish' },
+            marubozu: { data: cdl_marubozu, name: 'Marubozu', signal: 'momentum' }
+          }
+
+          detected_patterns = []
+          pattern_defs.each do |key, pdef|
+            pdef[:data].each_with_index do |val, i|
+              next if val.nil? || val == 0
+              detected_patterns << {
+                date: dates[i],
+                pattern: pdef[:name],
+                signal: val > 0 ? (pdef[:signal] == 'reversal' ? 'bullish' : pdef[:signal]) : (pdef[:signal] == 'reversal' ? 'bearish' : pdef[:signal]),
+                strength: val.abs
+              }
+            end
+          end
+          # Sort by date descending and take last 20
+          detected_patterns.sort_by! { |p| p[:date] }.reverse!.slice!(20..-1)
 
           # Filter results by period (keep indicators aligned with dates)
           filtered_dates, filtered_rsi, filtered_macd, filtered_macd_signal, filtered_macd_hist,
@@ -342,7 +402,8 @@ module SqaDemo
             vol_sma_20: filtered_vol_sma_20,
             vol_sma_50: filtered_vol_sma_50,
             vol_ema_12: filtered_vol_ema_12,
-            vol_ema_20: filtered_vol_ema_20
+            vol_ema_20: filtered_vol_ema_20,
+            patterns: detected_patterns || []
           }.to_json
         rescue => e
           status 500

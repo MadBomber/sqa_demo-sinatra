@@ -220,6 +220,45 @@
       </div>
       <div id="adxChart" class="chart chart-small"></div>
     </div>
+
+    <!-- Williams %R Chart -->
+    <div class="chart-container">
+      <div class="chart-header">
+        <h3><i class="fas fa-percentage"></i> Williams %R (14)</h3>
+      </div>
+      <div id="willrChart" class="chart chart-small"></div>
+    </div>
+
+    <!-- ATR Chart -->
+    <div class="chart-container">
+      <div class="chart-header">
+        <h3><i class="fas fa-expand-arrows-alt"></i> ATR (14)</h3>
+      </div>
+      <div id="atrChart" class="chart chart-small"></div>
+    </div>
+  </div>
+
+  <!-- Pattern Recognition & Signal Alerts -->
+  <div class="alerts-row">
+    <!-- Candlestick Patterns -->
+    <div class="chart-container">
+      <div class="chart-header">
+        <h2><i class="fas fa-shapes"></i> Candlestick Patterns</h2>
+      </div>
+      <div id="patternAlerts" class="alerts-container">
+        <p class="hint">Loading patterns...</p>
+      </div>
+    </div>
+
+    <!-- Signal Alerts -->
+    <div class="chart-container">
+      <div class="chart-header">
+        <h2><i class="fas fa-bell"></i> Signal Alerts</h2>
+      </div>
+      <div id="signalAlerts" class="alerts-container">
+        <p class="hint">Loading signals...</p>
+      </div>
+    </div>
   </div>
 
   <!-- Strategy Comparison -->
@@ -251,6 +290,8 @@ let macdChart = null;
 let stochChart = null;
 let cciChart = null;
 let adxChart = null;
+let willrChart = null;
+let atrChart = null;
 
 // Indicator configuration - Price Overlays
 const INDICATOR_CONFIG = {
@@ -402,6 +443,12 @@ async function loadIndicators() {
     renderStochChart();
     renderCCIChart();
     renderADXChart();
+    renderWillrChart();
+    renderATRChart();
+
+    // Render alerts
+    renderPatternAlerts();
+    renderSignalAlerts();
 
     // Re-render price chart if in line mode (to include updated indicator data)
     if (currentChartType === 'line') {
@@ -1289,6 +1336,263 @@ function renderADXChart() {
 
   adxChart = new ApexCharts(document.querySelector("#adxChart"), options);
   adxChart.render();
+}
+
+function renderWillrChart() {
+  if (willrChart) {
+    willrChart.destroy();
+  }
+
+  if (!indicatorData || !indicatorData.willr_14) {
+    document.querySelector("#willrChart").innerHTML = '<p style="text-align: center; padding: 40px; color: #9fa8da;">Williams %R data not available</p>';
+    return;
+  }
+
+  const validDates = [];
+  const validWillr = [];
+  for (let i = 0; i < indicatorData.willr_14.length; i++) {
+    if (indicatorData.dates[i] !== null &&
+        indicatorData.willr_14[i] !== null &&
+        !isNaN(indicatorData.willr_14[i])) {
+      validDates.push(indicatorData.dates[i]);
+      validWillr.push(indicatorData.willr_14[i]);
+    }
+  }
+
+  if (validDates.length === 0) {
+    document.querySelector("#willrChart").innerHTML = '<p style="text-align: center; padding: 40px; color: #9fa8da;">No valid Williams %R data available</p>';
+    return;
+  }
+
+  // Williams %R reference lines (note: scale is -100 to 0)
+  const overboughtLine = validDates.map(() => -20);
+  const oversoldLine = validDates.map(() => -80);
+
+  const options = {
+    series: [
+      { name: 'Williams %R', data: validWillr },
+      { name: 'Overbought (-20)', data: overboughtLine },
+      { name: 'Oversold (-80)', data: oversoldLine }
+    ],
+    chart: {
+      type: 'line',
+      height: 350,
+      group: 'stock-charts',
+      background: '#151b3d',
+      foreColor: '#e8eaf6',
+      toolbar: { show: true, tools: { download: true, zoom: true, zoomin: true, zoomout: true, pan: true, reset: true } },
+      zoom: { enabled: true, type: 'x' }
+    },
+    colors: ['#e056fd', '#ff3366', '#00ff88'],
+    stroke: { width: [3, 2, 2], curve: 'smooth', dashArray: [0, 5, 5] },
+    xaxis: {
+      type: 'category',
+      categories: validDates,
+      tickAmount: 10,
+      labels: {
+        rotate: -45,
+        style: { colors: '#9fa8da' },
+        formatter: (val) => val ? `${val.split('-')[1]}/${val.split('-')[2]}` : ''
+      }
+    },
+    yaxis: { min: -100, max: 0, reversed: true, labels: { style: { colors: '#9fa8da' } } },
+    grid: { borderColor: '#2a3154', strokeDashArray: 3 },
+    legend: { position: 'top', horizontalAlign: 'left', fontSize: '14px', labels: { colors: '#e8eaf6' } },
+    theme: { mode: 'dark' },
+    tooltip: { theme: 'dark', shared: true, intersect: false, x: { formatter: (val, opts) => validDates[opts.dataPointIndex] || val } }
+  };
+
+  willrChart = new ApexCharts(document.querySelector("#willrChart"), options);
+  willrChart.render();
+}
+
+function renderATRChart() {
+  if (atrChart) {
+    atrChart.destroy();
+  }
+
+  if (!indicatorData || !indicatorData.atr_14) {
+    document.querySelector("#atrChart").innerHTML = '<p style="text-align: center; padding: 40px; color: #9fa8da;">ATR data not available</p>';
+    return;
+  }
+
+  const validDates = [];
+  const validATR = [];
+  for (let i = 0; i < indicatorData.atr_14.length; i++) {
+    if (indicatorData.dates[i] !== null &&
+        indicatorData.atr_14[i] !== null &&
+        !isNaN(indicatorData.atr_14[i])) {
+      validDates.push(indicatorData.dates[i]);
+      validATR.push(indicatorData.atr_14[i]);
+    }
+  }
+
+  if (validDates.length === 0) {
+    document.querySelector("#atrChart").innerHTML = '<p style="text-align: center; padding: 40px; color: #9fa8da;">No valid ATR data available</p>';
+    return;
+  }
+
+  const options = {
+    series: [{ name: 'ATR', data: validATR }],
+    chart: {
+      type: 'area',
+      height: 350,
+      group: 'stock-charts',
+      background: '#151b3d',
+      foreColor: '#e8eaf6',
+      toolbar: { show: true, tools: { download: true, zoom: true, zoomin: true, zoomout: true, pan: true, reset: true } },
+      zoom: { enabled: true, type: 'x' }
+    },
+    colors: ['#ff6b6b'],
+    fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.5, opacityTo: 0.1, stops: [0, 100] } },
+    stroke: { width: 3, curve: 'smooth' },
+    xaxis: {
+      type: 'category',
+      categories: validDates,
+      tickAmount: 10,
+      labels: {
+        rotate: -45,
+        style: { colors: '#9fa8da' },
+        formatter: (val) => val ? `${val.split('-')[1]}/${val.split('-')[2]}` : ''
+      }
+    },
+    yaxis: { labels: { style: { colors: '#9fa8da' }, formatter: (val) => val ? val.toFixed(2) : '' } },
+    grid: { borderColor: '#2a3154', strokeDashArray: 3 },
+    legend: { position: 'top', horizontalAlign: 'left', fontSize: '14px', labels: { colors: '#e8eaf6' } },
+    theme: { mode: 'dark' },
+    tooltip: { theme: 'dark', shared: true, intersect: false, x: { formatter: (val, opts) => validDates[opts.dataPointIndex] || val } }
+  };
+
+  atrChart = new ApexCharts(document.querySelector("#atrChart"), options);
+  atrChart.render();
+}
+
+function renderPatternAlerts() {
+  const container = document.getElementById('patternAlerts');
+
+  if (!indicatorData || !indicatorData.patterns || indicatorData.patterns.length === 0) {
+    container.innerHTML = '<p class="no-alerts"><i class="fas fa-check-circle"></i> No patterns detected in the selected period</p>';
+    return;
+  }
+
+  let html = '';
+  indicatorData.patterns.forEach(pattern => {
+    html += `
+      <div class="alert-item ${pattern.signal}">
+        <div class="alert-info">
+          <span class="alert-pattern">${pattern.pattern}</span>
+          <span class="alert-date">${pattern.date}</span>
+        </div>
+        <span class="alert-signal ${pattern.signal}">${pattern.signal}</span>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+}
+
+function renderSignalAlerts() {
+  const container = document.getElementById('signalAlerts');
+
+  if (!indicatorData) {
+    container.innerHTML = '<p class="no-alerts">Loading...</p>';
+    return;
+  }
+
+  const signals = [];
+
+  // Get latest valid RSI value
+  const latestRsi = indicatorData.rsi?.filter(v => v !== null).slice(-1)[0];
+  if (latestRsi !== undefined) {
+    if (latestRsi < 30) {
+      signals.push({ indicator: 'RSI', value: latestRsi.toFixed(1), signal: 'buy', message: 'Oversold territory' });
+    } else if (latestRsi > 70) {
+      signals.push({ indicator: 'RSI', value: latestRsi.toFixed(1), signal: 'sell', message: 'Overbought territory' });
+    } else {
+      signals.push({ indicator: 'RSI', value: latestRsi.toFixed(1), signal: 'hold', message: 'Neutral zone' });
+    }
+  }
+
+  // Get latest Stochastic values
+  const latestSlowK = indicatorData.stoch_slowk?.filter(v => v !== null).slice(-1)[0];
+  const latestSlowD = indicatorData.stoch_slowd?.filter(v => v !== null).slice(-1)[0];
+  if (latestSlowK !== undefined && latestSlowD !== undefined) {
+    if (latestSlowK < 20 && latestSlowD < 20) {
+      signals.push({ indicator: 'Stochastic', value: `${latestSlowK.toFixed(0)}/${latestSlowD.toFixed(0)}`, signal: 'buy', message: 'Oversold' });
+    } else if (latestSlowK > 80 && latestSlowD > 80) {
+      signals.push({ indicator: 'Stochastic', value: `${latestSlowK.toFixed(0)}/${latestSlowD.toFixed(0)}`, signal: 'sell', message: 'Overbought' });
+    } else if (latestSlowK > latestSlowD && latestSlowK < 50) {
+      signals.push({ indicator: 'Stochastic', value: `${latestSlowK.toFixed(0)}/${latestSlowD.toFixed(0)}`, signal: 'buy', message: '%K crossed above %D' });
+    } else if (latestSlowK < latestSlowD && latestSlowK > 50) {
+      signals.push({ indicator: 'Stochastic', value: `${latestSlowK.toFixed(0)}/${latestSlowD.toFixed(0)}`, signal: 'sell', message: '%K crossed below %D' });
+    }
+  }
+
+  // Get latest CCI value
+  const latestCci = indicatorData.cci_14?.filter(v => v !== null).slice(-1)[0];
+  if (latestCci !== undefined) {
+    if (latestCci < -100) {
+      signals.push({ indicator: 'CCI', value: latestCci.toFixed(0), signal: 'buy', message: 'Oversold' });
+    } else if (latestCci > 100) {
+      signals.push({ indicator: 'CCI', value: latestCci.toFixed(0), signal: 'sell', message: 'Overbought' });
+    }
+  }
+
+  // Get latest Williams %R
+  const latestWillr = indicatorData.willr_14?.filter(v => v !== null).slice(-1)[0];
+  if (latestWillr !== undefined) {
+    if (latestWillr < -80) {
+      signals.push({ indicator: 'Williams %R', value: latestWillr.toFixed(0), signal: 'buy', message: 'Oversold' });
+    } else if (latestWillr > -20) {
+      signals.push({ indicator: 'Williams %R', value: latestWillr.toFixed(0), signal: 'sell', message: 'Overbought' });
+    }
+  }
+
+  // Get latest ADX (trend strength)
+  const latestAdx = indicatorData.adx_14?.filter(v => v !== null).slice(-1)[0];
+  if (latestAdx !== undefined) {
+    if (latestAdx > 25) {
+      signals.push({ indicator: 'ADX', value: latestAdx.toFixed(0), signal: 'hold', message: 'Strong trend' });
+    } else {
+      signals.push({ indicator: 'ADX', value: latestAdx.toFixed(0), signal: 'hold', message: 'Weak/No trend' });
+    }
+  }
+
+  // MACD crossover
+  const macdValues = indicatorData.macd?.filter(v => v !== null);
+  const signalValues = indicatorData.macd_signal?.filter(v => v !== null);
+  if (macdValues?.length >= 2 && signalValues?.length >= 2) {
+    const prevMacd = macdValues[macdValues.length - 2];
+    const currMacd = macdValues[macdValues.length - 1];
+    const prevSignal = signalValues[signalValues.length - 2];
+    const currSignal = signalValues[signalValues.length - 1];
+
+    if (prevMacd < prevSignal && currMacd > currSignal) {
+      signals.push({ indicator: 'MACD', value: currMacd.toFixed(2), signal: 'buy', message: 'Bullish crossover' });
+    } else if (prevMacd > prevSignal && currMacd < currSignal) {
+      signals.push({ indicator: 'MACD', value: currMacd.toFixed(2), signal: 'sell', message: 'Bearish crossover' });
+    }
+  }
+
+  if (signals.length === 0) {
+    container.innerHTML = '<p class="no-alerts"><i class="fas fa-check-circle"></i> No significant signals detected</p>';
+    return;
+  }
+
+  let html = '';
+  signals.forEach(sig => {
+    html += `
+      <div class="alert-item ${sig.signal === 'buy' ? 'bullish' : sig.signal === 'sell' ? 'bearish' : 'neutral'}">
+        <div class="alert-info">
+          <span class="alert-pattern">${sig.indicator}: ${sig.value}</span>
+          <span class="alert-date">${sig.message}</span>
+        </div>
+        <span class="alert-signal ${sig.signal}">${sig.signal}</span>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
 }
 
 function updateChartType(type) {
