@@ -96,6 +96,8 @@ module SqaDemo
         begin
           @stock = SQA::Stock.new(ticker: ticker)
           @ticker = ticker
+          ticker_info = SQA::Ticker.lookup(ticker)
+          @company_name = ticker_info[:name] if ticker_info
           erb :dashboard
         rescue => e
           @error = "Failed to load data for #{ticker}: #{e.message}"
@@ -134,6 +136,58 @@ module SqaDemo
       # Portfolio optimizer
       get '/portfolio' do
         erb :portfolio
+      end
+
+      # Company details page
+      get '/company/:ticker' do
+        ticker = params[:ticker].upcase
+
+        begin
+          @stock = SQA::Stock.new(ticker: ticker)
+          @ticker = ticker
+
+          # Get comprehensive company overview from SQA (convert string keys to symbols)
+          raw_overview = @stock.overview || {}
+          @overview = raw_overview.transform_keys(&:to_sym)
+
+          # Fallback to ticker lookup if overview is empty
+          if @overview.empty?
+            ticker_info = SQA::Ticker.lookup(ticker)
+            @company_name = ticker_info[:name] if ticker_info
+            @exchange = ticker_info[:exchange] if ticker_info
+          else
+            @company_name = @overview[:name]
+            @exchange = @overview[:exchange]
+          end
+
+          df = @stock.df
+          prices = df["adj_close_price"].to_a
+          volumes = df["volume"].to_a
+          dates = df["timestamp"].to_a.map(&:to_s)
+
+          @data_start_date = dates.first
+          @data_end_date = dates.last
+          @total_trading_days = dates.length
+          @current_price = prices.last
+          @all_time_high = prices.max
+          @all_time_low = prices.min
+          @avg_volume = (volumes.sum.to_f / volumes.length).round
+          @max_volume = volumes.max
+          @price_range = @all_time_high - @all_time_low
+
+          # Calculate year-to-date return if available
+          require 'date'
+          current_year = Date.today.year
+          ytd_prices = dates.each_with_index.select { |d, _| Date.parse(d).year == current_year }.map { |_, i| prices[i] }
+          if ytd_prices.length > 1
+            @ytd_return = ((ytd_prices.last - ytd_prices.first) / ytd_prices.first * 100).round(2)
+          end
+
+          erb :company
+        rescue => e
+          @error = "Failed to load data for #{ticker}: #{e.message}"
+          erb :error
+        end
       end
 
       # API Endpoints
@@ -508,8 +562,8 @@ module SqaDemo
             regime: {
               type: regime[:type],
               volatility: regime[:volatility],
-              strength: regime[:strength],
-              trend: regime[:trend]
+              strength: regime[:strength_score],
+              trend: regime[:trend_score]
             },
             seasonal: {
               best_months: seasonal[:best_months],

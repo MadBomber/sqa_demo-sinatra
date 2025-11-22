@@ -1,0 +1,682 @@
+<div class="company-details">
+  <div class="company-header">
+    <div class="company-title">
+      <h1>
+        <i class="fas fa-building"></i>
+        <%= @company_name || @ticker %>
+      </h1>
+      <div class="company-meta">
+        <span class="ticker-badge"><%= @ticker %></span>
+        <% if @exchange %>
+          <span class="exchange-badge"><i class="fas fa-exchange-alt"></i> <%= @exchange %></span>
+        <% end %>
+        <% if @overview[:asset_type] %>
+          <span class="type-badge"><%= @overview[:asset_type] %></span>
+        <% end %>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button onclick="location.href='/dashboard/<%= @ticker %>'" class="btn btn-primary">
+        <i class="fas fa-chart-line"></i> View Dashboard
+      </button>
+      <button onclick="location.href='/analyze/<%= @ticker %>'" class="btn btn-secondary">
+        <i class="fas fa-analytics"></i> Analysis
+      </button>
+      <button onclick="location.href='/backtest/<%= @ticker %>'" class="btn btn-secondary">
+        <i class="fas fa-history"></i> Backtest
+      </button>
+    </div>
+  </div>
+
+  <% if @overview[:description] %>
+  <!-- Company Description -->
+  <div class="description-section">
+    <div class="section-header">
+      <h2><i class="fas fa-align-left"></i> About</h2>
+    </div>
+    <p class="description-text"><%= @overview[:description] %></p>
+  </div>
+  <% end %>
+
+  <!-- Company Overview -->
+  <div class="section-header">
+    <h2><i class="fas fa-info-circle"></i> Company Overview</h2>
+  </div>
+  <div class="info-grid">
+    <div class="info-card">
+      <div class="info-label">Ticker Symbol</div>
+      <div class="info-value"><%= @ticker %></div>
+    </div>
+    <div class="info-card">
+      <div class="info-label">Company Name</div>
+      <div class="info-value"><%= @company_name || 'N/A' %></div>
+    </div>
+    <div class="info-card">
+      <div class="info-label">Exchange</div>
+      <div class="info-value"><%= @exchange || 'N/A' %></div>
+    </div>
+    <% if @overview[:sector] %>
+    <div class="info-card">
+      <div class="info-label">Sector</div>
+      <div class="info-value"><%= @overview[:sector] %></div>
+    </div>
+    <% end %>
+    <% if @overview[:industry] %>
+    <div class="info-card">
+      <div class="info-label">Industry</div>
+      <div class="info-value"><%= @overview[:industry] %></div>
+    </div>
+    <% end %>
+    <% if @overview[:country] %>
+    <div class="info-card">
+      <div class="info-label">Country</div>
+      <div class="info-value"><%= @overview[:country] %></div>
+    </div>
+    <% end %>
+    <% if @overview[:address] %>
+    <div class="info-card wide">
+      <div class="info-label">Address</div>
+      <div class="info-value small"><%= @overview[:address] %></div>
+    </div>
+    <% end %>
+    <% if @overview[:fiscal_year_end] %>
+    <div class="info-card">
+      <div class="info-label">Fiscal Year End</div>
+      <div class="info-value"><%= @overview[:fiscal_year_end] %></div>
+    </div>
+    <% end %>
+  </div>
+
+  <!-- Price & Valuation -->
+  <div class="section-header">
+    <h2><i class="fas fa-dollar-sign"></i> Price & Valuation</h2>
+  </div>
+  <div class="info-grid">
+    <div class="info-card highlight">
+      <div class="info-label">Current Price</div>
+      <div class="info-value price">$<%= sprintf('%.2f', @current_price) %></div>
+    </div>
+    <% if @overview[:"52_week_high"] %>
+    <div class="info-card">
+      <div class="info-label">52-Week High</div>
+      <div class="info-value positive">$<%= sprintf('%.2f', @overview[:"52_week_high"]) %></div>
+    </div>
+    <% end %>
+    <% if @overview[:"52_week_low"] %>
+    <div class="info-card">
+      <div class="info-label">52-Week Low</div>
+      <div class="info-value negative">$<%= sprintf('%.2f', @overview[:"52_week_low"]) %></div>
+    </div>
+    <% end %>
+    <% if @overview[:"50_day_moving_average"] %>
+    <div class="info-card">
+      <div class="info-label">50-Day MA</div>
+      <div class="info-value">$<%= sprintf('%.2f', @overview[:"50_day_moving_average"]) %></div>
+    </div>
+    <% end %>
+    <% if @overview[:"200_day_moving_average"] %>
+    <div class="info-card">
+      <div class="info-label">200-Day MA</div>
+      <div class="info-value">$<%= sprintf('%.2f', @overview[:"200_day_moving_average"]) %></div>
+    </div>
+    <% end %>
+    <% if @overview[:market_capitalization] %>
+    <div class="info-card">
+      <div class="info-label">Market Cap</div>
+      <div class="info-value">$<%= format_number((@overview[:market_capitalization] / 1_000_000_000).round(2)) %>B</div>
+    </div>
+    <% end %>
+    <% if @overview[:pe_ratio] %>
+    <div class="info-card">
+      <div class="info-label">P/E Ratio</div>
+      <div class="info-value"><%= sprintf('%.2f', @overview[:pe_ratio]) %></div>
+    </div>
+    <% end %>
+    <% if @overview[:forward_pe] %>
+    <div class="info-card">
+      <div class="info-label">Forward P/E</div>
+      <div class="info-value"><%= sprintf('%.2f', @overview[:forward_pe]) %></div>
+    </div>
+    <% end %>
+    <% if @overview[:peg_ratio] %>
+    <div class="info-card">
+      <div class="info-label">PEG Ratio</div>
+      <div class="info-value"><%= sprintf('%.2f', @overview[:peg_ratio]) %></div>
+    </div>
+    <% end %>
+    <% if @overview[:price_to_book_ratio] %>
+    <div class="info-card">
+      <div class="info-label">Price/Book</div>
+      <div class="info-value"><%= sprintf('%.2f', @overview[:price_to_book_ratio]) %></div>
+    </div>
+    <% end %>
+    <% if @overview[:price_to_sales_ratio_ttm] %>
+    <div class="info-card">
+      <div class="info-label">Price/Sales</div>
+      <div class="info-value"><%= sprintf('%.2f', @overview[:price_to_sales_ratio_ttm]) %></div>
+    </div>
+    <% end %>
+    <% if @overview[:ev_to_ebitda] %>
+    <div class="info-card">
+      <div class="info-label">EV/EBITDA</div>
+      <div class="info-value"><%= sprintf('%.2f', @overview[:ev_to_ebitda]) %></div>
+    </div>
+    <% end %>
+    <% if @overview[:beta] %>
+    <div class="info-card">
+      <div class="info-label">Beta</div>
+      <div class="info-value"><%= sprintf('%.3f', @overview[:beta]) %></div>
+    </div>
+    <% end %>
+  </div>
+
+  <!-- Dividends -->
+  <% if @overview[:dividend_per_share] || @overview[:dividend_yield] %>
+  <div class="section-header">
+    <h2><i class="fas fa-hand-holding-usd"></i> Dividends</h2>
+  </div>
+  <div class="info-grid">
+    <% if @overview[:dividend_per_share] %>
+    <div class="info-card">
+      <div class="info-label">Dividend/Share</div>
+      <div class="info-value">$<%= sprintf('%.2f', @overview[:dividend_per_share]) %></div>
+    </div>
+    <% end %>
+    <% if @overview[:dividend_yield] %>
+    <div class="info-card">
+      <div class="info-label">Dividend Yield</div>
+      <div class="info-value positive"><%= sprintf('%.2f', @overview[:dividend_yield] * 100) %>%</div>
+    </div>
+    <% end %>
+    <% if @overview[:ex_dividend_date] %>
+    <div class="info-card">
+      <div class="info-label">Ex-Dividend Date</div>
+      <div class="info-value"><%= @overview[:ex_dividend_date] %></div>
+    </div>
+    <% end %>
+    <% if @overview[:dividend_date] %>
+    <div class="info-card">
+      <div class="info-label">Dividend Date</div>
+      <div class="info-value"><%= @overview[:dividend_date] %></div>
+    </div>
+    <% end %>
+  </div>
+  <% end %>
+
+  <!-- Financials -->
+  <div class="section-header">
+    <h2><i class="fas fa-chart-pie"></i> Financial Metrics</h2>
+  </div>
+  <div class="info-grid">
+    <% if @overview[:eps] %>
+    <div class="info-card">
+      <div class="info-label">EPS</div>
+      <div class="info-value">$<%= sprintf('%.2f', @overview[:eps]) %></div>
+    </div>
+    <% end %>
+    <% if @overview[:book_value] %>
+    <div class="info-card">
+      <div class="info-label">Book Value</div>
+      <div class="info-value">$<%= sprintf('%.2f', @overview[:book_value]) %></div>
+    </div>
+    <% end %>
+    <% if @overview[:revenue_ttm] %>
+    <div class="info-card">
+      <div class="info-label">Revenue (TTM)</div>
+      <div class="info-value">$<%= format_number((@overview[:revenue_ttm] / 1_000_000_000).round(2)) %>B</div>
+    </div>
+    <% end %>
+    <% if @overview[:gross_profit_ttm] %>
+    <div class="info-card">
+      <div class="info-label">Gross Profit (TTM)</div>
+      <div class="info-value">$<%= format_number((@overview[:gross_profit_ttm] / 1_000_000_000).round(2)) %>B</div>
+    </div>
+    <% end %>
+    <% if @overview[:ebitda] %>
+    <div class="info-card">
+      <div class="info-label">EBITDA</div>
+      <div class="info-value">$<%= format_number((@overview[:ebitda] / 1_000_000_000).round(2)) %>B</div>
+    </div>
+    <% end %>
+    <% if @overview[:profit_margin] %>
+    <div class="info-card">
+      <div class="info-label">Profit Margin</div>
+      <div class="info-value <%= @overview[:profit_margin] >= 0 ? 'positive' : 'negative' %>"><%= sprintf('%.1f', @overview[:profit_margin] * 100) %>%</div>
+    </div>
+    <% end %>
+    <% if @overview[:operating_margin_ttm] %>
+    <div class="info-card">
+      <div class="info-label">Operating Margin</div>
+      <div class="info-value"><%= sprintf('%.1f', @overview[:operating_margin_ttm] * 100) %>%</div>
+    </div>
+    <% end %>
+    <% if @overview[:return_on_equity_ttm] %>
+    <div class="info-card">
+      <div class="info-label">Return on Equity</div>
+      <div class="info-value"><%= sprintf('%.1f', @overview[:return_on_equity_ttm] * 100) %>%</div>
+    </div>
+    <% end %>
+    <% if @overview[:return_on_assets_ttm] %>
+    <div class="info-card">
+      <div class="info-label">Return on Assets</div>
+      <div class="info-value"><%= sprintf('%.1f', @overview[:return_on_assets_ttm] * 100) %>%</div>
+    </div>
+    <% end %>
+  </div>
+
+  <!-- Growth -->
+  <% if @overview[:quarterly_earnings_growth_yoy] || @overview[:quarterly_revenue_growth_yoy] %>
+  <div class="section-header">
+    <h2><i class="fas fa-chart-line"></i> Growth</h2>
+  </div>
+  <div class="info-grid">
+    <% if @overview[:quarterly_earnings_growth_yoy] %>
+    <div class="info-card">
+      <div class="info-label">Quarterly Earnings Growth (YoY)</div>
+      <div class="info-value <%= @overview[:quarterly_earnings_growth_yoy] >= 0 ? 'positive' : 'negative' %>">
+        <%= @overview[:quarterly_earnings_growth_yoy] >= 0 ? '+' : '' %><%= sprintf('%.1f', @overview[:quarterly_earnings_growth_yoy] * 100) %>%
+      </div>
+    </div>
+    <% end %>
+    <% if @overview[:quarterly_revenue_growth_yoy] %>
+    <div class="info-card">
+      <div class="info-label">Quarterly Revenue Growth (YoY)</div>
+      <div class="info-value <%= @overview[:quarterly_revenue_growth_yoy] >= 0 ? 'positive' : 'negative' %>">
+        <%= @overview[:quarterly_revenue_growth_yoy] >= 0 ? '+' : '' %><%= sprintf('%.1f', @overview[:quarterly_revenue_growth_yoy] * 100) %>%
+      </div>
+    </div>
+    <% end %>
+    <% if @ytd_return %>
+    <div class="info-card">
+      <div class="info-label">YTD Return</div>
+      <div class="info-value <%= @ytd_return >= 0 ? 'positive' : 'negative' %>">
+        <%= @ytd_return >= 0 ? '+' : '' %><%= @ytd_return %>%
+      </div>
+    </div>
+    <% end %>
+  </div>
+  <% end %>
+
+  <!-- Analyst Ratings -->
+  <% if @overview[:analyst_target_price] || @overview[:analyst_rating_buy] %>
+  <div class="section-header">
+    <h2><i class="fas fa-users"></i> Analyst Ratings</h2>
+  </div>
+  <div class="info-grid">
+    <% if @overview[:analyst_target_price] %>
+    <div class="info-card highlight">
+      <div class="info-label">Target Price</div>
+      <div class="info-value price">$<%= sprintf('%.2f', @overview[:analyst_target_price]) %></div>
+      <% upside = ((@overview[:analyst_target_price] - @current_price) / @current_price * 100).round(1) %>
+      <div class="info-subtext <%= upside >= 0 ? 'positive' : 'negative' %>">
+        <%= upside >= 0 ? '+' : '' %><%= upside %>% upside
+      </div>
+    </div>
+    <% end %>
+    <% if @overview[:analyst_rating_strong_buy] %>
+    <div class="info-card">
+      <div class="info-label">Strong Buy</div>
+      <div class="info-value positive"><%= @overview[:analyst_rating_strong_buy].to_i %></div>
+    </div>
+    <% end %>
+    <% if @overview[:analyst_rating_buy] %>
+    <div class="info-card">
+      <div class="info-label">Buy</div>
+      <div class="info-value positive"><%= @overview[:analyst_rating_buy].to_i %></div>
+    </div>
+    <% end %>
+    <% if @overview[:analyst_rating_hold] %>
+    <div class="info-card">
+      <div class="info-label">Hold</div>
+      <div class="info-value"><%= @overview[:analyst_rating_hold].to_i %></div>
+    </div>
+    <% end %>
+    <% if @overview[:analyst_rating_sell] %>
+    <div class="info-card">
+      <div class="info-label">Sell</div>
+      <div class="info-value negative"><%= @overview[:analyst_rating_sell].to_i %></div>
+    </div>
+    <% end %>
+    <% if @overview[:analyst_rating_strong_sell] %>
+    <div class="info-card">
+      <div class="info-label">Strong Sell</div>
+      <div class="info-value negative"><%= @overview[:analyst_rating_strong_sell].to_i %></div>
+    </div>
+    <% end %>
+  </div>
+  <% end %>
+
+  <!-- Shares -->
+  <% if @overview[:shares_outstanding] || @overview[:shares_float] %>
+  <div class="section-header">
+    <h2><i class="fas fa-layer-group"></i> Share Information</h2>
+  </div>
+  <div class="info-grid">
+    <% if @overview[:shares_outstanding] %>
+    <div class="info-card">
+      <div class="info-label">Shares Outstanding</div>
+      <div class="info-value"><%= format_number((@overview[:shares_outstanding] / 1_000_000).round(1)) %>M</div>
+    </div>
+    <% end %>
+    <% if @overview[:shares_float] %>
+    <div class="info-card">
+      <div class="info-label">Float</div>
+      <div class="info-value"><%= format_number((@overview[:shares_float] / 1_000_000).round(1)) %>M</div>
+    </div>
+    <% end %>
+    <% if @overview[:percent_insiders] %>
+    <div class="info-card">
+      <div class="info-label">Insider Ownership</div>
+      <div class="info-value"><%= sprintf('%.2f', @overview[:percent_insiders]) %>%</div>
+    </div>
+    <% end %>
+    <% if @overview[:percent_institutions] %>
+    <div class="info-card">
+      <div class="info-label">Institutional Ownership</div>
+      <div class="info-value"><%= sprintf('%.2f', @overview[:percent_institutions]) %>%</div>
+    </div>
+    <% end %>
+  </div>
+  <% end %>
+
+  <!-- Historical Data Summary -->
+  <div class="section-header">
+    <h2><i class="fas fa-database"></i> Historical Data Summary</h2>
+  </div>
+  <div class="info-grid">
+    <div class="info-card">
+      <div class="info-label">Data Range Start</div>
+      <div class="info-value"><%= @data_start_date %></div>
+    </div>
+    <div class="info-card">
+      <div class="info-label">Data Range End</div>
+      <div class="info-value"><%= @data_end_date %></div>
+    </div>
+    <div class="info-card">
+      <div class="info-label">Total Trading Days</div>
+      <div class="info-value"><%= format_number(@total_trading_days) %></div>
+    </div>
+    <div class="info-card">
+      <div class="info-label">All-Time High (Data)</div>
+      <div class="info-value positive">$<%= sprintf('%.2f', @all_time_high) %></div>
+    </div>
+    <div class="info-card">
+      <div class="info-label">All-Time Low (Data)</div>
+      <div class="info-value negative">$<%= sprintf('%.2f', @all_time_low) %></div>
+    </div>
+    <div class="info-card">
+      <div class="info-label">Average Daily Volume</div>
+      <div class="info-value"><%= format_number(@avg_volume) %></div>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <div class="navigation-section">
+    <h3>Quick Navigation</h3>
+    <div class="nav-buttons">
+      <a href="/dashboard/<%= @ticker %>" class="nav-card">
+        <i class="fas fa-chart-candlestick"></i>
+        <span>Dashboard</span>
+        <p>View real-time charts and indicators</p>
+      </a>
+      <a href="/analyze/<%= @ticker %>" class="nav-card">
+        <i class="fas fa-microscope"></i>
+        <span>Analysis</span>
+        <p>Technical and market analysis</p>
+      </a>
+      <a href="/backtest/<%= @ticker %>" class="nav-card">
+        <i class="fas fa-flask"></i>
+        <span>Backtest</span>
+        <p>Test trading strategies</p>
+      </a>
+    </div>
+  </div>
+</div>
+
+<style>
+.company-details {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.company-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #2a3154;
+}
+
+.company-title h1 {
+  color: #e8eaf6;
+  font-size: 2rem;
+  margin: 0 0 10px 0;
+}
+
+.company-title h1 i {
+  color: #00d4ff;
+  margin-right: 10px;
+}
+
+.company-meta {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.ticker-badge {
+  background: linear-gradient(135deg, #00d4ff, #00a0cc);
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-weight: bold;
+  font-size: 1rem;
+}
+
+.exchange-badge, .type-badge {
+  background: #2a3154;
+  color: #9fa8da;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+}
+
+.exchange-badge i {
+  margin-right: 5px;
+}
+
+.description-section {
+  margin-bottom: 20px;
+}
+
+.description-text {
+  color: #b0b8d9;
+  line-height: 1.7;
+  font-size: 0.95rem;
+  background: #1a2248;
+  padding: 20px;
+  border-radius: 10px;
+  border: 1px solid #2a3154;
+}
+
+.section-header {
+  margin: 30px 0 15px 0;
+}
+
+.section-header h2 {
+  color: #e8eaf6;
+  font-size: 1.3rem;
+  margin: 0;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #2a3154;
+}
+
+.section-header h2 i {
+  color: #00d4ff;
+  margin-right: 10px;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 15px;
+}
+
+.info-card {
+  background: #1a2248;
+  border-radius: 10px;
+  padding: 18px;
+  border: 1px solid #2a3154;
+}
+
+.info-card.highlight {
+  background: linear-gradient(135deg, #1a2248, #232b52);
+  border-color: #00d4ff;
+}
+
+.info-card.wide {
+  grid-column: span 2;
+}
+
+.info-label {
+  color: #9fa8da;
+  font-size: 0.8rem;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.info-value {
+  color: #e8eaf6;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.info-value.small {
+  font-size: 0.95rem;
+  font-weight: normal;
+}
+
+.info-value.price {
+  color: #00d4ff;
+}
+
+.info-value.positive {
+  color: #00ff88;
+}
+
+.info-value.negative {
+  color: #ff3366;
+}
+
+.info-subtext {
+  font-size: 0.85rem;
+  margin-top: 5px;
+}
+
+.info-subtext.positive {
+  color: #00ff88;
+}
+
+.info-subtext.negative {
+  color: #ff3366;
+}
+
+.navigation-section {
+  margin-top: 40px;
+  padding-top: 30px;
+  border-top: 1px solid #2a3154;
+}
+
+.navigation-section h3 {
+  color: #e8eaf6;
+  margin-bottom: 20px;
+}
+
+.nav-buttons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.nav-card {
+  background: #1a2248;
+  border-radius: 10px;
+  padding: 25px;
+  text-decoration: none;
+  border: 1px solid #2a3154;
+  transition: all 0.3s ease;
+}
+
+.nav-card:hover {
+  background: #232b52;
+  border-color: #00d4ff;
+  transform: translateY(-3px);
+}
+
+.nav-card i {
+  font-size: 2rem;
+  color: #00d4ff;
+  margin-bottom: 10px;
+  display: block;
+}
+
+.nav-card span {
+  color: #e8eaf6;
+  font-size: 1.2rem;
+  font-weight: 600;
+  display: block;
+  margin-bottom: 5px;
+}
+
+.nav-card p {
+  color: #9fa8da;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.btn-link {
+  background: transparent;
+  color: #00d4ff;
+  border: 1px solid #00d4ff;
+}
+
+.btn-link:hover {
+  background: rgba(0, 212, 255, 0.1);
+}
+
+.company-name {
+  font-weight: normal;
+  font-size: 0.7em;
+  color: #9fa8da;
+}
+
+.company-link {
+  margin-top: 5px;
+}
+
+@media (max-width: 768px) {
+  .company-header {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .header-actions {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .header-actions .btn {
+    flex: 1;
+    min-width: 120px;
+  }
+
+  .info-card.wide {
+    grid-column: span 1;
+  }
+}
+</style>
