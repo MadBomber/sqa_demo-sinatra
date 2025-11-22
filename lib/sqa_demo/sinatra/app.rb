@@ -42,7 +42,7 @@ module SqaDemo
 
         # Format comparison value based on type
         def format_compare_value(value, format_type)
-          return 'N/A' if value.nil?
+          return '-' if value.nil?
           case format_type
           when :currency
             sprintf('$%.2f', value)

@@ -78,6 +78,23 @@
         { key: :analyst_target, label: 'Analyst Target', format: :currency, higher_is_better: nil },
       ]},
     ]
+
+    # Calculate best count for each ticker (needed for sorting columns)
+    best_counts = {}
+    @tickers.each { |t| best_counts[t] = 0 if @stocks_data[t] }
+
+    indicators.each do |section|
+      section[:items].each do |item|
+        best_ticker, _ = find_extremes(@stocks_data, item[:key], item[:higher_is_better])
+        best_counts[best_ticker] += 1 if best_ticker
+      end
+    end
+
+    # Sort tickers by best count (descending), then alphabetically for ties
+    sorted_tickers = @tickers.select { |t| @stocks_data[t] }.sort_by { |t| [-best_counts[t], t] }
+
+    # Find the ticker with the most "best" results
+    max_best_count = best_counts.values.max || 0
   %>
 
   <div class="compare-table-container">
@@ -85,44 +102,25 @@
       <thead>
         <tr>
           <th class="metric-header">Metric</th>
-          <% @tickers.each do |ticker| %>
-            <% if @stocks_data[ticker] %>
+          <% sorted_tickers.each do |ticker| %>
             <th class="ticker-header">
               <div class="ticker-name"><%= ticker %></div>
               <% if @stocks_data[ticker][:company_name] %>
               <div class="company-name"><%= @stocks_data[ticker][:company_name] %></div>
               <% end %>
             </th>
-            <% end %>
           <% end %>
         </tr>
       </thead>
       <tbody>
-        <%
-          # Calculate best count for each ticker
-          best_counts = {}
-          @tickers.each { |t| best_counts[t] = 0 if @stocks_data[t] }
-
-          indicators.each do |section|
-            section[:items].each do |item|
-              best_ticker, _ = find_extremes(@stocks_data, item[:key], item[:higher_is_better])
-              best_counts[best_ticker] += 1 if best_ticker
-            end
-          end
-
-          # Find the ticker with the most "best" results
-          max_best_count = best_counts.values.max || 0
-        %>
         <tr class="best-count-row">
           <td class="metric-label best-count-label">Best Count</td>
-          <% @tickers.each do |ticker| %>
-            <% if @stocks_data[ticker] %>
-              <%
-                count = best_counts[ticker] || 0
-                is_leader = count == max_best_count && count > 0
-              %>
+          <% sorted_tickers.each do |ticker| %>
+            <%
+              count = best_counts[ticker] || 0
+              is_leader = count == max_best_count && count > 0
+            %>
           <td class="metric-value best-count-value <%= 'best-value' if is_leader %>"><%= count %></td>
-            <% end %>
           <% end %>
         </tr>
         <% indicators.each do |section| %>
@@ -142,24 +140,22 @@
             <span class="metric-note"><%= item[:note] %></span>
             <% end %>
           </td>
-          <% @tickers.each do |ticker| %>
-            <% if @stocks_data[ticker] %>
-              <%
-                value = @stocks_data[ticker][item[:key]]
-                formatted = format_compare_value(value, item[:format])
-                cell_class = ''
-                if value && item[:higher_is_better] != nil
-                  if ticker == best_ticker
-                    cell_class = 'best-value'
-                  end
+          <% sorted_tickers.each do |ticker| %>
+            <%
+              value = @stocks_data[ticker][item[:key]]
+              formatted = format_compare_value(value, item[:format])
+              cell_class = ''
+              if value && item[:higher_is_better] != nil
+                if ticker == best_ticker
+                  cell_class = 'best-value'
                 end
-                # Special coloring for percent changes
-                if [:percent_sign].include?(item[:format]) && value
-                  cell_class += value >= 0 ? ' positive' : ' negative'
-                end
-              %>
+              end
+              # Special coloring for percent changes
+              if [:percent_sign].include?(item[:format]) && value
+                cell_class += value >= 0 ? ' positive' : ' negative'
+              end
+            %>
           <td class="metric-value <%= cell_class %>"><%= formatted %></td>
-            <% end %>
           <% end %>
         </tr>
         <% end %>
@@ -185,15 +181,13 @@
   <div class="compare-actions">
     <h3>Individual Analysis</h3>
     <div class="action-buttons">
-      <% @tickers.each do |ticker| %>
-        <% if @stocks_data[ticker] %>
+      <% sorted_tickers.each do |ticker| %>
         <div class="ticker-actions">
           <span class="ticker-label"><%= ticker %></span>
           <a href="/dashboard/<%= ticker %>" class="btn btn-small">Dashboard</a>
           <a href="/analyze/<%= ticker %>" class="btn btn-small">Analysis</a>
           <a href="/company/<%= ticker %>" class="btn btn-small">Company</a>
         </div>
-        <% end %>
       <% end %>
     </div>
   </div>
