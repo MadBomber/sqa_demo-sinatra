@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2025-11-22
+
+### Changed
+- **Major refactoring** of `app.rb` from 902 lines to 50 lines for improved maintainability
+- Extracted helpers into separate modules under `helpers/` directory:
+  - `formatting.rb` - Value formatting helpers (currency, percent, numbers)
+  - `filters.rb` - Time period filtering for data arrays
+  - `stock_loader.rb` - Centralized stock data loading and calculations
+  - `api_helpers.rb` - API-specific helpers (indicators, patterns, FPOP analysis)
+- Extracted routes into separate modules under `routes/` directory:
+  - `pages.rb` - Page routes (/, /dashboard, /analyze, /backtest, /company, /compare)
+  - `api.rb` - API routes (/api/stock, /api/indicators, /api/backtest, /api/analyze, /api/compare)
+- Centralized stock data fetching to eliminate code duplication across routes
+- Added reusable helper methods for common calculations:
+  - `load_stock` and `load_stock_with_overview` for stock loading
+  - `extract_ohlcv` for OHLCV data extraction
+  - `calculate_price_metrics`, `calculate_indicators`, `calculate_risk_metrics`
+  - `fetch_comparison_data` for parallel comparison fetching
+
 ## [0.2.0] - 2025-11-22
 
 ### Added
