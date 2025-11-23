@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2025-11-22
+
+### Added
+- **Multi-stock comparison page** (`/compare`) for side-by-side analysis of up to 5 stocks
+  - Enter multiple tickers separated by spaces in search input
+  - Automatic routing to comparison page when multiple tickers entered
+  - Compare dropdown menu in navigation with popular comparison presets
+- **Comprehensive comparison table** with 7 metric sections:
+  - Price & Performance (current price, daily change, YTD return, 52-week high/low, volume)
+  - Momentum Indicators (RSI, MACD, Stochastic, Momentum, ROC, CCI, Williams %R)
+  - Trend Indicators (ADX, SMA 50/200, EMA 20)
+  - Volatility (ATR, Bollinger Bands, Beta)
+  - Valuation (P/E, Forward P/E, PEG, Price/Book, Market Cap)
+  - Profitability (EPS, Profit Margin, Operating Margin, ROE, ROA, Dividend Yield)
+  - Risk Metrics (Sharpe Ratio, Max Drawdown, Analyst Target)
+- **Best Count summary row** at top of comparison table showing total "best" results per stock
+- **Smart column ordering** - stocks sorted by best count (highest to lowest), alphabetically for ties
+- **Best value highlighting** - green highlight for best performer in each metric row
+- **Parallel data fetching** using threads for faster multi-stock loading
+- **Partial failure handling** - shows warning for failed tickers while displaying available data
+- Individual analysis links for each compared stock (Dashboard, Analysis, Company)
+
+### Changed
+- Search input placeholder updated to indicate multi-ticker support
+- Added hint text explaining comparison feature (up to 5 tickers)
+- Missing data now displays as "-" instead of "N/A" for cleaner presentation
+
 ## [0.1.2] - 2025-11-22
 
 ### Added
@@ -79,7 +106,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Development hot-reloader support
 - Startup script for easy deployment
 
-[Unreleased]: https://github.com/madbomber/sqa_demo-sinatra/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/madbomber/sqa_demo-sinatra/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/madbomber/sqa_demo-sinatra/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/madbomber/sqa_demo-sinatra/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/madbomber/sqa_demo-sinatra/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/madbomber/sqa_demo-sinatra/releases/tag/v0.1.0
