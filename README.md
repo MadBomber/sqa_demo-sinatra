@@ -194,6 +194,24 @@ Bug reports and pull requests are welcome on GitHub at https://github.com/madbom
 
 The gem is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).
 
+## To Do
+
+### High Priority
+- [ ] **Portfolio Optimization** - Implement Modern Portfolio Theory (MPT) with efficient frontier visualization
+- [ ] **Expand Test Coverage** - Add unit tests for helper modules and integration tests for API endpoints
+
+### Medium Priority
+- [ ] **Watchlists** - User-defined stock watchlists with Redis persistence
+- [ ] **Price Alerts** - Threshold-based alerts for price and technical indicators
+- [ ] **Additional Strategies** - Implement more backtesting strategies from SQA library
+- [ ] **Export Features** - Export charts as PNG/PDF and data as CSV/JSON
+
+### Low Priority
+- [ ] **Historical Strategy Comparison** - Compare strategy performance across different time periods
+- [ ] **API Documentation Page** - Interactive API docs within the app
+- [ ] **User Guide/Tutorial** - In-app walkthrough for new users
+- [ ] **Custom Strategy Builder** - UI for creating user-defined strategies
+
 ## Disclaimer
 
 This software is for educational and research purposes only. Do not use for actual trading without proper due diligence. The authors are not responsible for financial losses.
