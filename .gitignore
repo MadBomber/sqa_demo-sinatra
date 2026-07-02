@@ -9,3 +9,6 @@
 /tmp/
 *.gem
 Gemfile.lock
+
+# Local cross-repo dev lockfile (Gemfile.local)
+/Gemfile.local.lock
