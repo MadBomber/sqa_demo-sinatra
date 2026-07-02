@@ -37,7 +37,7 @@ OptionParser.new do |opts|
 end.parse!
 
 # Find the config.ru file
-config_ru = File.expand_path('../../config.ru', __FILE__)
+config_ru = File.expand_path('../config.ru', __dir__)
 
 unless File.exist?(config_ru)
   # When installed as a gem, use the gem's config.ru

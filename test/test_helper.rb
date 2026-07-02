@@ -2,6 +2,13 @@
 
 ENV['RACK_ENV'] = 'test'
 
+require 'simplecov'
+SimpleCov.start do
+  add_filter '/test/'
+  add_group 'Routes', 'lib/sqa_demo/sinatra/routes'
+  add_group 'Helpers', 'lib/sqa_demo/sinatra/helpers'
+end
+
 require 'minitest/autorun'
 require 'minitest/pride'
 require 'rack/test'

@@ -32,9 +32,9 @@ module SqaDemo
             "#{prefix}#{sprintf('%.2f', value)}%"
           when :percent_from_decimal
             sprintf('%.1f%%', value * 100)
-          when :decimal2
+          when :decimal_2
             sprintf('%.2f', value)
-          when :decimal3
+          when :decimal_3
             sprintf('%.3f', value)
           when :number
             value.to_s.reverse.gsub(/(\d{3})(?=\d)/, '\\1,').reverse
@@ -47,7 +47,7 @@ module SqaDemo
         def find_extremes(stocks_data, key, higher_is_better)
           return [nil, nil] if higher_is_better.nil?
 
-          values = stocks_data.map { |t, d| [t, d[key]] }.reject { |_, v| v.nil? }
+          values = stocks_data.map { |t, d| [t, d[key]] }.compact
           return [nil, nil] if values.empty?
 
           sorted = values.sort_by { |_, v| v }

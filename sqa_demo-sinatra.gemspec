@@ -17,6 +17,7 @@ Gem::Specification.new do |spec|
   spec.metadata['homepage_uri'] = spec.homepage
   spec.metadata['source_code_uri'] = spec.homepage
   spec.metadata['changelog_uri'] = "#{spec.homepage}/blob/main/CHANGELOG.md"
+  spec.metadata['rubygems_mfa_required'] = 'true'
 
   spec.files = Dir.chdir(__dir__) do
     `git ls-files -z`.split("\x0").reject do |f|
@@ -42,8 +43,13 @@ Gem::Specification.new do |spec|
 
   # Development dependencies
   spec.add_development_dependency 'debug_me'
+  spec.add_development_dependency 'flay'
+  spec.add_development_dependency 'flog'
+  spec.add_development_dependency 'racc' # flog/flay transitively need this on Ruby 4+
   spec.add_development_dependency 'minitest'
   spec.add_development_dependency 'rack-test'
   spec.add_development_dependency 'rake'
   spec.add_development_dependency 'rerun'
+  spec.add_development_dependency 'rubocop'
+  spec.add_development_dependency 'simplecov'
 end

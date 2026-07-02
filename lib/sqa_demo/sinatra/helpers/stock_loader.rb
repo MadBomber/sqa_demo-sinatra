@@ -68,7 +68,7 @@ module SqaDemo
           current_price = prices.last
           prev_price = prices[-2] || prices.last
           change = current_price - prev_price
-          change_pct = prev_price > 0 ? (change / prev_price * 100) : 0
+          change_pct = prev_price.positive? ? (change / prev_price * 100) : 0
 
           {
             current_price: current_price,
@@ -87,34 +87,17 @@ module SqaDemo
                             .select { |d, _| Date.parse(d).year == current_year }
                             .map { |_, i| prices[i] }
 
-          if ytd_prices.length > 1
-            ((ytd_prices.last - ytd_prices.first) / ytd_prices.first * 100).round(2)
-          end
+          return unless ytd_prices.length > 1
+          ((ytd_prices.last - ytd_prices.first) / ytd_prices.first * 100).round(2)
         end
 
         # Calculate technical indicators for a stock
         # Returns a hash of indicator values (last value for each)
         def calculate_indicators(highs, lows, prices)
-          {
-            rsi: safe_indicator { SQAI.rsi(prices, period: 14).last },
-            macd: safe_indicator { SQAI.macd(prices)[0].last },
-            macd_signal: safe_indicator { SQAI.macd(prices)[1].last },
-            macd_hist: safe_indicator { SQAI.macd(prices)[2].last },
-            stoch_k: safe_indicator { SQAI.stoch(highs, lows, prices)[0].last },
-            stoch_d: safe_indicator { SQAI.stoch(highs, lows, prices)[1].last },
-            sma_50: safe_indicator { SQAI.sma(prices, period: 50).last },
-            sma_200: safe_indicator { SQAI.sma(prices, period: 200).last },
-            ema_20: safe_indicator { SQAI.ema(prices, period: 20).last },
-            bb_upper: safe_indicator { SQAI.bbands(prices)[0].last },
-            bb_middle: safe_indicator { SQAI.bbands(prices)[1].last },
-            bb_lower: safe_indicator { SQAI.bbands(prices)[2].last },
-            adx: safe_indicator { SQAI.adx(highs, lows, prices, period: 14).last },
-            atr: safe_indicator { SQAI.atr(highs, lows, prices, period: 14).last },
-            cci: safe_indicator { SQAI.cci(highs, lows, prices, period: 14).last },
-            willr: safe_indicator { SQAI.willr(highs, lows, prices, period: 14).last },
-            mom: safe_indicator { SQAI.mom(prices, period: 10).last },
-            roc: safe_indicator { SQAI.roc(prices, period: 10).last }
-          }
+          oscillator_indicators(highs, lows, prices)
+            .merge(moving_average_indicators(prices))
+            .merge(band_indicators(prices))
+            .merge(trend_and_volatility_indicators(highs, lows, prices))
         end
 
         # Calculate risk metrics
@@ -134,35 +117,62 @@ module SqaDemo
         # This is used by the compare route for parallel fetching
         def fetch_comparison_data(ticker)
           data = load_stock_with_overview(ticker)
-          stock = data[:stock]
-          overview = data[:overview]
+          ohlcv = extract_ohlcv(data[:stock])
 
-          ohlcv = extract_ohlcv(stock)
+          [ticker, comparison_payload(ticker, data, ohlcv)]
+        rescue => e
+          [ticker, { error: e.message }]
+        end
+
+        # Safely execute indicator calculation, returning nil on error
+        def safe_indicator
+          yield
+        rescue StandardError
+          nil
+        end
+
+        private
+
+        # Assemble the full per-ticker payload used by the /compare page
+        def comparison_payload(ticker, data, ohlcv)
           prices = ohlcv[:closes]
-          volumes = ohlcv[:volumes]
-          dates = ohlcv[:dates]
           highs = ohlcv[:highs]
           lows = ohlcv[:lows]
 
-          # Calculate metrics
           price_metrics = calculate_price_metrics(prices)
           indicators = calculate_indicators(highs, lows, prices)
           risk_metrics = calculate_risk_metrics(prices)
 
-          # Average volume
-          avg_volume = (volumes.sum.to_f / volumes.length).round
-
-          [ticker, {
+          {
             ticker: ticker,
-            company_name: data[:company_name],
+            company_name: data[:company_name]
+          }
+            .merge(comparison_price_fields(price_metrics, ohlcv))
+            .merge(comparison_indicator_fields(indicators))
+            .merge(comparison_fundamental_fields(data[:overview]))
+            .merge(comparison_risk_fields(risk_metrics))
+        end
+
+        # Price/volume/return fields for the comparison payload
+        def comparison_price_fields(price_metrics, ohlcv)
+          prices = ohlcv[:closes]
+          volumes = ohlcv[:volumes]
+          dates = ohlcv[:dates]
+
+          {
             current_price: price_metrics[:current_price],
             change: price_metrics[:change],
             change_pct: price_metrics[:change_pct],
             high_52w: price_metrics[:high_52w],
             low_52w: price_metrics[:low_52w],
             ytd_return: calculate_ytd_return(dates, prices),
-            avg_volume: avg_volume,
-            # Technical indicators
+            avg_volume: (volumes.sum.to_f / volumes.length).round
+          }
+        end
+
+        # Technical indicator fields for the comparison payload
+        def comparison_indicator_fields(indicators)
+          {
             rsi: indicators[:rsi],
             macd: indicators[:macd],
             macd_signal: indicators[:macd_signal],
@@ -180,8 +190,13 @@ module SqaDemo
             cci: indicators[:cci],
             willr: indicators[:willr],
             mom: indicators[:mom],
-            roc: indicators[:roc],
-            # Fundamental data from overview
+            roc: indicators[:roc]
+          }
+        end
+
+        # Fundamental data fields (from company overview) for the comparison payload
+        def comparison_fundamental_fields(overview)
+          {
             pe_ratio: overview[:pe_ratio],
             forward_pe: overview[:forward_pe],
             peg_ratio: overview[:peg_ratio],
@@ -194,20 +209,58 @@ module SqaDemo
             roa: overview[:return_on_assets_ttm],
             market_cap: overview[:market_capitalization],
             beta: overview[:beta],
-            analyst_target: overview[:analyst_target_price],
-            # Risk metrics
-            sharpe_ratio: risk_metrics[:sharpe_ratio],
-            max_drawdown: risk_metrics[:max_drawdown]
-          }]
-        rescue => e
-          [ticker, { error: e.message }]
+            analyst_target: overview[:analyst_target_price]
+          }
         end
 
-        # Safely execute indicator calculation, returning nil on error
-        def safe_indicator
-          yield
-        rescue StandardError
-          nil
+        # Risk metric fields for the comparison payload
+        def comparison_risk_fields(risk_metrics)
+          {
+            sharpe_ratio: risk_metrics[:sharpe_ratio],
+            max_drawdown: risk_metrics[:max_drawdown]
+          }
+        end
+
+        # RSI, MACD, and Stochastic oscillator values
+        def oscillator_indicators(highs, lows, prices)
+          {
+            rsi: safe_indicator { SQAI.rsi(prices, period: 14).last },
+            macd: safe_indicator { SQAI.macd(prices)[0].last },
+            macd_signal: safe_indicator { SQAI.macd(prices)[1].last },
+            macd_hist: safe_indicator { SQAI.macd(prices)[2].last },
+            stoch_k: safe_indicator { SQAI.stoch(highs, lows, prices)[0].last },
+            stoch_d: safe_indicator { SQAI.stoch(highs, lows, prices)[1].last }
+          }
+        end
+
+        # SMA/EMA moving average values
+        def moving_average_indicators(prices)
+          {
+            sma_50: safe_indicator { SQAI.sma(prices, period: 50).last },
+            sma_200: safe_indicator { SQAI.sma(prices, period: 200).last },
+            ema_20: safe_indicator { SQAI.ema(prices, period: 20).last }
+          }
+        end
+
+        # Bollinger Band values
+        def band_indicators(prices)
+          {
+            bb_upper: safe_indicator { SQAI.bbands(prices)[0].last },
+            bb_middle: safe_indicator { SQAI.bbands(prices)[1].last },
+            bb_lower: safe_indicator { SQAI.bbands(prices)[2].last }
+          }
+        end
+
+        # ADX, ATR, CCI, Williams %R, momentum, and ROC values
+        def trend_and_volatility_indicators(highs, lows, prices)
+          {
+            adx: safe_indicator { SQAI.adx(highs, lows, prices, period: 14).last },
+            atr: safe_indicator { SQAI.atr(highs, lows, prices, period: 14).last },
+            cci: safe_indicator { SQAI.cci(highs, lows, prices, period: 14).last },
+            willr: safe_indicator { SQAI.willr(highs, lows, prices, period: 14).last },
+            mom: safe_indicator { SQAI.mom(prices, period: 10).last },
+            roc: safe_indicator { SQAI.roc(prices, period: 10).last }
+          }
         end
       end
     end

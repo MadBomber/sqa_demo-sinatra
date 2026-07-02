@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(chmod:*)",
+      "mcp__playwright-mcp__playwright_navigate",
+      "mcp__playwright-mcp__playwright_click",
+      "mcp__playwright-mcp__playwright_screenshot",
+      "mcp__playwright-mcp__playwright_console_logs",
+      "mcp__playwright-mcp__playwright_get",
+      "mcp__playwright-mcp__playwright_evaluate",
+      "Bash(find:*)",
+      "Bash(git -C /Users/dewayne/sandbox/git_repos/madbomber/sqa_demo-sinatra log --oneline --all)",
+      "Bash(bundle exec ruby -e \"require ''''sqa''''; puts SQA::TAI.methods(false).sort\")",
+      "Bash(gem contents:*)",
+      "Bash(bundle exec ruby:*)",
+      "Bash(ruby -c:*)",
+      "Bash(curl:*)",
+      "Bash(git -C /Users/dewayne/sandbox/git_repos/madbomber/sqa_demo-sinatra log --oneline -30)",
+      "Bash(python3:*)",
+      "WebSearch",
+      "mcp__playwright-mcp__playwright_fill",
+      "mcp__playwright-mcp__playwright_close",
+      "mcp__playwright-mcp__playwright_get_visible_html",
+      "Bash(tree:*)",
+      "Bash(git -C /Users/dewayne/sandbox/git_repos/madbomber/sqa_demo-sinatra log --oneline -10)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

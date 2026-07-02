@@ -10,6 +10,7 @@ require_relative 'helpers/formatting'
 require_relative 'helpers/filters'
 require_relative 'helpers/stock_loader'
 require_relative 'helpers/api_helpers'
+require_relative 'helpers/page_helpers'
 
 # Load routes
 require_relative 'routes/pages'
@@ -41,6 +42,7 @@ module SqaDemo
       helpers Helpers::Filters
       helpers Helpers::StockLoader
       helpers Helpers::ApiHelpers
+      helpers Helpers::PageHelpers
 
       # Register routes
       register Routes::Pages
