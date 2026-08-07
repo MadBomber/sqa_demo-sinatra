@@ -38,6 +38,9 @@ Gem::Specification.new do |spec|
   # JSON handling
   spec.add_dependency 'json', '~> 2.7'
 
+  # Configuration
+  spec.add_dependency 'myway_config'  # XDG-aware configuration management (extends anyway_config)
+
   # SQA library
   spec.add_dependency 'sqa'
 
