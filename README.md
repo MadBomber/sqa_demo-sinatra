@@ -18,7 +18,7 @@ gem install sqa_demo-sinatra
 
 ### Prerequisites
 
-- Ruby >= 3.2
+- Ruby >= 4.0
 - TA-Lib library (for technical indicators)
 - Redis (for KBS strategy)
 

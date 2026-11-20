@@ -12,7 +12,7 @@ Gem::Specification.new do |spec|
   spec.description   = 'A Sinatra-based web application for stock market analysis using the SQA library'
   spec.homepage      = 'https://github.com/madbomber/sqa_demo-sinatra'
   spec.license       = 'MIT'
-  spec.required_ruby_version = '>= 3.2.0'
+  spec.required_ruby_version = '>= 4.0'
 
   spec.metadata['homepage_uri'] = spec.homepage
   spec.metadata['source_code_uri'] = spec.homepage
@@ -38,6 +38,9 @@ Gem::Specification.new do |spec|
   # JSON handling
   spec.add_dependency 'json', '~> 2.7'
 
+  # Configuration
+  spec.add_dependency 'myway_config'  # XDG-aware configuration management (extends anyway_config)
+
   # SQA library
   spec.add_dependency 'sqa'
 
@@ -46,6 +49,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'flay'
   spec.add_development_dependency 'flog'
   spec.add_development_dependency 'racc' # flog/flay transitively need this on Ruby 4+
+  spec.add_development_dependency 'reek' # code smell gate (rake reek_check)
   spec.add_development_dependency 'minitest'
   spec.add_development_dependency 'rack-test'
   spec.add_development_dependency 'rake'
